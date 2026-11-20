@@ -1,9 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTask } from '../../context/TaskContext';
-import { TaskStatus, TaskPriority, TaskCategory } from '../../types';
+import { Task, TaskStatus, TaskPriority, TaskCategory } from '../../types';
 
-export const ProductivityCharts: React.FC = () => {
-  const { tasks, stats } = useTask();
+interface ProductivityChartsProps {
+  tasks?: Task[];
+  stats?: {
+    total: number;
+    completed: number;
+    pending: number;
+    overdue: number;
+    completionRate: number;
+  };
+  timeRange?: '7d' | '30d' | 'quarter';
+}
+
+export const ProductivityCharts: React.FC<ProductivityChartsProps> = ({
+  tasks: propTasks,
+  stats: propStats,
+  timeRange = '7d',
+}) => {
+  const context = useTask();
+  const tasks = propTasks || context.tasks;
+  const stats = propStats || context.stats;
+
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
 
   // Status distribution
@@ -52,32 +71,109 @@ export const ProductivityCharts: React.FC = () => {
     completed: tasks.filter((t) => t.category === cat && t.status === 'Completed').length,
   }));
 
-  // Weekly completion mock trend (Mon - Sun)
-  const weeklyData = [
-    { day: 'Mon', completed: 3, created: 4 },
-    { day: 'Tue', completed: 5, created: 3 },
-    { day: 'Wed', completed: 4, created: 6 },
-    { day: 'Thu', completed: 7, created: 5 },
-    { day: 'Fri', completed: 6, created: 4 },
-    { day: 'Sat', completed: 2, created: 1 },
-    { day: 'Sun', completed: 1, created: 2 },
-  ];
+  // Dynamic Velocity Data based on timeRange and actual task timestamps
+  const velocityData = useMemo(() => {
+    if (timeRange === '7d') {
+      const days = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        const dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' });
 
-  const maxWeekly = Math.max(...weeklyData.map((d) => Math.max(d.completed, d.created)), 8);
+        const created = tasks.filter((t) => t.createdAt.split('T')[0] === dateStr).length;
+        const completed = tasks.filter(
+          (t) =>
+            (t.completedAt && t.completedAt.split('T')[0] === dateStr) ||
+            (t.status === 'Completed' && t.dueDate === dateStr)
+        ).length;
+
+        days.push({ day: dayLabel, dateStr, created, completed });
+      }
+      return {
+        title: 'Weekly Task Velocity',
+        subtitle: 'Tasks created vs tasks completed over the last 7 days',
+        items: days,
+      };
+    } else if (timeRange === '30d') {
+      const weeks = [
+        { day: 'Wk -3', startDaysAgo: 28, endDaysAgo: 21 },
+        { day: 'Wk -2', startDaysAgo: 21, endDaysAgo: 14 },
+        { day: 'Wk -1', startDaysAgo: 14, endDaysAgo: 7 },
+        { day: 'Current Wk', startDaysAgo: 7, endDaysAgo: 0 },
+      ];
+
+      const now = Date.now();
+      const items = weeks.map((w) => {
+        const startTime = now - w.startDaysAgo * 86400000;
+        const endTime = now - w.endDaysAgo * 86400000;
+
+        const created = tasks.filter((t) => {
+          const tTime = new Date(t.createdAt).getTime();
+          return tTime >= startTime && tTime <= endTime;
+        }).length;
+
+        const completed = tasks.filter((t) => {
+          const compTime = t.completedAt ? new Date(t.completedAt).getTime() : new Date(t.dueDate).getTime();
+          return t.status === 'Completed' && compTime >= startTime && compTime <= endTime;
+        }).length;
+
+        return { day: w.day, dateStr: w.day, created, completed };
+      });
+
+      return {
+        title: 'Monthly Task Velocity',
+        subtitle: 'Tasks created vs tasks completed over the last 30 days (weekly cadence)',
+        items,
+      };
+    } else {
+      const now = new Date();
+      const months = [];
+      for (let i = 2; i >= 0; i--) {
+        const m = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthName = m.toLocaleDateString('en-US', { month: 'short' });
+        const startOfMonth = new Date(m.getFullYear(), m.getMonth(), 1).getTime();
+        const endOfMonth = new Date(m.getFullYear(), m.getMonth() + 1, 0, 23, 59, 59).getTime();
+
+        const created = tasks.filter((t) => {
+          const tTime = new Date(t.createdAt).getTime();
+          return tTime >= startOfMonth && tTime <= endOfMonth;
+        }).length;
+
+        const completed = tasks.filter((t) => {
+          const compTime = t.completedAt ? new Date(t.completedAt).getTime() : new Date(t.dueDate).getTime();
+          return t.status === 'Completed' && compTime >= startOfMonth && compTime <= endOfMonth;
+        }).length;
+
+        months.push({ day: monthName, dateStr: monthName, created, completed });
+      }
+
+      return {
+        title: 'Quarterly Task Velocity',
+        subtitle: 'Tasks created vs tasks completed across the current quarter (monthly breakdown)',
+        items: months,
+      };
+    }
+  }, [tasks, timeRange]);
+
+  const maxWeekly = Math.max(
+    ...velocityData.items.map((d) => Math.max(d.completed, d.created)),
+    4
+  );
 
   return (
     <div className="space-y-6">
       {/* Top 2 Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Weekly Completion Trends Chart */}
+        {/* Weekly/Monthly/Quarterly Velocity Chart */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                Weekly Task Velocity
+                {velocityData.title}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Tasks created vs tasks completed over the last 7 days
+                {velocityData.subtitle}
               </p>
             </div>
             <div className="flex items-center gap-3 text-xs">
@@ -94,7 +190,7 @@ export const ProductivityCharts: React.FC = () => {
 
           {/* SVG Bar Chart */}
           <div className="h-60 flex items-end justify-between gap-3 pt-6 px-2">
-            {weeklyData.map((d) => {
+            {velocityData.items.map((d) => {
               const createdHeight = (d.created / maxWeekly) * 100;
               const completedHeight = (d.completed / maxWeekly) * 100;
 
@@ -115,13 +211,21 @@ export const ProductivityCharts: React.FC = () => {
                   >
                     {/* Created Bar */}
                     <div
-                      style={{ height: `${createdHeight}%` }}
-                      className="w-3 sm:w-4 bg-blue-500/80 hover:bg-blue-600 rounded-t-md transition-all duration-300"
+                      style={{ height: `${Math.max(createdHeight, d.created > 0 ? 8 : 2)}%` }}
+                      className={`w-3 sm:w-4 rounded-t-md transition-all duration-300 ${
+                        d.created > 0
+                          ? 'bg-blue-500/80 hover:bg-blue-600'
+                          : 'bg-slate-200 dark:bg-slate-700/50'
+                      }`}
                     />
                     {/* Completed Bar */}
                     <div
-                      style={{ height: `${completedHeight}%` }}
-                      className="w-3 sm:w-4 bg-emerald-500/80 hover:bg-emerald-600 rounded-t-md transition-all duration-300"
+                      style={{ height: `${Math.max(completedHeight, d.completed > 0 ? 8 : 2)}%` }}
+                      className={`w-3 sm:w-4 rounded-t-md transition-all duration-300 ${
+                        d.completed > 0
+                          ? 'bg-emerald-500/80 hover:bg-emerald-600'
+                          : 'bg-slate-200 dark:bg-slate-700/50'
+                      }`}
                     />
                   </div>
 
@@ -163,35 +267,37 @@ export const ProductivityCharts: React.FC = () => {
                   strokeWidth="14"
                   className="text-slate-100 dark:text-slate-800"
                 />
-                {(() => {
-                  let accumulatedOffset = 0;
-                  const total = stats.total || 1;
-                  const circumference = 2 * Math.PI * 38; // ~238.76
+                {stats.total > 0 &&
+                  (() => {
+                    let accumulatedOffset = 0;
+                    const total = stats.total || 1;
+                    const circumference = 2 * Math.PI * 38;
 
-                  return (['To Do', 'In Progress', 'In Review', 'Completed'] as TaskStatus[]).map(
-                    (st) => {
-                      const count = statusCounts[st];
-                      const strokeDasharray = `${(count / total) * circumference} ${circumference}`;
-                      const strokeDashoffset = -accumulatedOffset;
-                      accumulatedOffset += (count / total) * circumference;
+                    return (['To Do', 'In Progress', 'In Review', 'Completed'] as TaskStatus[]).map(
+                      (st) => {
+                        const count = statusCounts[st];
+                        if (count === 0) return null;
+                        const strokeDasharray = `${(count / total) * circumference} ${circumference}`;
+                        const strokeDashoffset = -accumulatedOffset;
+                        accumulatedOffset += (count / total) * circumference;
 
-                      return (
-                        <circle
-                          key={st}
-                          cx="50"
-                          cy="50"
-                          r="38"
-                          fill="transparent"
-                          stroke={statusColors[st]}
-                          strokeWidth="14"
-                          strokeDasharray={strokeDasharray}
-                          strokeDashoffset={strokeDashoffset}
-                          className="transition-all duration-500 hover:opacity-90"
-                        />
-                      );
-                    }
-                  );
-                })()}
+                        return (
+                          <circle
+                            key={st}
+                            cx="50"
+                            cy="50"
+                            r="38"
+                            fill="transparent"
+                            stroke={statusColors[st]}
+                            strokeWidth="14"
+                            strokeDasharray={strokeDasharray}
+                            strokeDashoffset={strokeDashoffset}
+                            className="transition-all duration-500 hover:opacity-90"
+                          />
+                        );
+                      }
+                    );
+                  })()}
               </svg>
 
               {/* Center Stat */}

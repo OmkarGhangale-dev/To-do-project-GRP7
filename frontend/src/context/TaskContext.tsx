@@ -82,7 +82,10 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const saved = localStorage.getItem('taskflow_tasks_v2');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length >= INITIAL_TASKS.length) {
+          return parsed;
+        }
       } catch (e) {
         console.error(e);
       }

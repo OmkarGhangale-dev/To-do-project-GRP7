@@ -115,7 +115,7 @@ export const AdminActivityLogsPage: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filtered.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-50/60 transition-colors text-xs">
+                <tr key={log.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors text-xs">
                   <td className="px-5 py-3.5 font-mono text-slate-500 whitespace-nowrap">
                     {new Date(log.timestamp).toLocaleDateString()}{' '}
                     {new Date(log.timestamp).toLocaleTimeString()}

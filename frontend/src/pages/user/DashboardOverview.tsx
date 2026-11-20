@@ -103,7 +103,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             </button>
             <button
               onClick={() => onNavigate('kanban')}
-              className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-[#EEF2F6] dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-semibold rounded-xl hover:bg-slate-50 transition-colors shadow-2xs"
+              className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-[#EEF2F6] dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors shadow-2xs"
             >
               Open Kanban Board
             </button>
@@ -291,7 +291,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
           <button
             onClick={() => onNavigate('analytics')}
-            className="mt-6 w-full py-2 text-xs font-bold text-[#5D87FF] bg-[#ECF2FF] dark:bg-blue-950/60 rounded-xl hover:bg-blue-100 transition-colors flex items-center justify-center gap-1"
+            className="mt-6 w-full py-2 text-xs font-bold text-[#5D87FF] bg-[#ECF2FF] dark:bg-blue-950/60 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors flex items-center justify-center gap-1"
           >
             Explore Productivity Report <ArrowRight className="w-3.5 h-3.5" />
           </button>
@@ -331,7 +331,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 return (
                   <div
                     key={task.id}
-                    className="flex items-center justify-between p-3.5 rounded-xl border border-[#EEF2F6] dark:border-slate-800 bg-[#FBFBFE] dark:bg-slate-800/40 hover:bg-[#F4F6FA] transition-colors"
+                    className="flex items-center justify-between p-3.5 rounded-xl border border-[#EEF2F6] dark:border-slate-800 bg-[#FBFBFE] dark:bg-slate-800/40 hover:bg-[#F4F6FA] dark:hover:bg-slate-800/80 transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <button

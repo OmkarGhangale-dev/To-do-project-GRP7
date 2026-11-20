@@ -132,8 +132,8 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = () => {
                 onClick={() => markNotificationRead(item.id)}
                 className={`p-4 sm:p-5 flex items-start gap-4 transition-colors cursor-pointer ${
                   !item.read
-                    ? 'bg-blue-50/30 dark:bg-blue-950/20 hover:bg-blue-50/50'
-                    : 'hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
+                    ? 'bg-blue-50/40 dark:bg-blue-950/25 hover:bg-blue-100/60 dark:hover:bg-blue-900/40'
+                    : 'hover:bg-slate-100/70 dark:hover:bg-slate-800/60'
                 }`}
               >
                 <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shrink-0 shadow-2xs mt-0.5">

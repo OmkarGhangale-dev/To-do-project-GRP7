@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ListTodo,
   CheckCircle2,
@@ -12,8 +12,43 @@ import { ProductivityCharts } from '../../components/analytics/ProductivityChart
 import { useTask } from '../../context/TaskContext';
 
 export const AnalyticsPage: React.FC = () => {
-  const { stats } = useTask();
-  const [timeRange, setTimeRange] = useState('7d');
+  const { tasks } = useTask();
+  const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'quarter'>('7d');
+
+  // Dynamically filter tasks based on the selected timeRange and task dates
+  const filteredTasks = useMemo(() => {
+    const now = new Date();
+    const daysLimit = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
+    const cutoffTime = now.getTime() - daysLimit * 24 * 60 * 60 * 1000;
+
+    return tasks.filter((t) => {
+      const createdTime = new Date(t.createdAt).getTime();
+      const dueTime = new Date(t.dueDate).getTime();
+      return createdTime >= cutoffTime || dueTime >= cutoffTime;
+    });
+  }, [tasks, timeRange]);
+
+  // Recalculate KPIs based on filtered tasks
+  const stats = useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const total = filteredTasks.length;
+    const completed = filteredTasks.filter((t) => t.status === 'Completed').length;
+    const activeBacklog = filteredTasks.filter(
+      (t) => t.status === 'In Progress' || t.status === 'In Review'
+    ).length;
+    const overdue = filteredTasks.filter(
+      (t) => t.status !== 'Completed' && t.dueDate < todayStr
+    ).length;
+    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    return {
+      total,
+      completed,
+      pending: activeBacklog,
+      overdue,
+      completionRate,
+    };
+  }, [filteredTasks]);
 
   return (
     <div className="space-y-6">
@@ -33,30 +68,30 @@ export const AnalyticsPage: React.FC = () => {
           <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 text-xs font-semibold">
             <button
               onClick={() => setTimeRange('7d')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 timeRange === '7d'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               Last 7 Days
             </button>
             <button
               onClick={() => setTimeRange('30d')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 timeRange === '30d'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               Last 30 Days
             </button>
             <button
               onClick={() => setTimeRange('quarter')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 timeRange === 'quarter'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               This Quarter
@@ -65,7 +100,7 @@ export const AnalyticsPage: React.FC = () => {
 
           <button
             onClick={() => window.print()}
-            className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             title="Download or Print Report"
           >
             <Download className="w-4 h-4" />
@@ -83,7 +118,7 @@ export const AnalyticsPage: React.FC = () => {
           icon={ListTodo}
           iconBgColor="bg-blue-50 dark:bg-blue-950/60"
           iconColor="text-blue-600 dark:text-blue-400"
-          subtext="Volume across sprint cycle"
+          subtext={`Volume across ${timeRange === '7d' ? 'last 7 days' : timeRange === '30d' ? 'last 30 days' : 'this quarter'}`}
         />
 
         <StatCard
@@ -121,7 +156,7 @@ export const AnalyticsPage: React.FC = () => {
       </div>
 
       {/* Charts Module */}
-      <ProductivityCharts />
+      <ProductivityCharts tasks={filteredTasks} stats={stats} timeRange={timeRange} />
 
       {/* Summary Scorecard Box */}
       <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
