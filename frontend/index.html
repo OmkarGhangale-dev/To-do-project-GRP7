@@ -3,512 +3,661 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TaskFlow — Collaborative To-Do & Task Management (Group 7)</title>
-  <meta name="description" content="Group 7 To-Do Web Application with modern User and Admin Dashboards">
+  <title>TASKFLOW — Group 7 Team Productivity SaaS</title>
+  <meta name="description" content="Exact Visual Recreation of the TaskFlow Productivity Application for Group 7">
   <link rel="icon" type="image/png" href="assets/taskflow-icon.png">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
-  <!-- Full App Shell Layout -->
-  <div class="app-layout">
+  <!-- Full App Container -->
+  <div class="app-container">
 
     <!-- ==================================================================
-         1. Collapsible Sidebar Navigation
+         1. SIDEBAR (Exact Replica of TaskFlow Sidebar / AdminSidebar)
          ================================================================== -->
-    <aside class="sidebar" id="app-sidebar" aria-label="Main Navigation">
-      <div class="sidebar-header">
-        <a href="#dashboard" class="sidebar-brand" id="brand-home-link">
-          <img src="assets/taskflow-icon.png" alt="TaskFlow Icon" class="brand-img">
-          <div class="brand-text-wrap">
-            <span class="brand-title">Task<span>Flow</span></span>
-            <span class="brand-badge">Group 7</span>
+    <aside class="app-sidebar" id="app-sidebar" aria-label="Main Navigation">
+      <div class="sidebar-scroll-area">
+        <!-- Top Brand Header -->
+        <div class="sidebar-brand-box">
+          <div class="brand-click-target" id="brand-home-btn">
+            <img src="assets/taskflow-icon.png" alt="TASKFLOW" class="brand-icon-img">
+            <div class="brand-text-col" id="brand-text-col">
+              <div class="brand-main-title">
+                <span>TASKFLOW</span>
+                <span class="brand-tag-pro" id="brand-role-tag">PRO</span>
+              </div>
+              <span class="brand-sub-title" id="brand-sub-title">Team G7 SaaS</span>
+            </div>
           </div>
-        </a>
-        <button type="button" class="sidebar-toggle-btn" id="sidebar-close-btn" aria-label="Close sidebar menu">✕</button>
+          <button type="button" class="collapse-trigger-btn" id="sidebar-collapse-btn" title="Toggle Sidebar Width">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+        </div>
+
+        <!-- USER SIDEBAR NAVIGATION ITEMS -->
+        <div id="user-sidebar-nav" class="sidebar-nav-group" style="margin-top: 1rem;">
+          <div class="sidebar-group-title">Home</div>
+          <ul class="sidebar-menu-list">
+            <li>
+              <button type="button" class="sidebar-menu-item-btn active" data-page="overview">
+                <span class="menu-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+                </span>
+                <span class="menu-label-text">Dashboard</span>
+              </button>
+            </li>
+          </ul>
+
+          <div class="sidebar-group-title" style="margin-top: 1.25rem;">Apps</div>
+          <ul class="sidebar-menu-list">
+            <li>
+              <button type="button" class="sidebar-menu-item-btn" data-page="tasks">
+                <span class="menu-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                </span>
+                <span class="menu-label-text">My Tasks</span>
+                <span class="menu-badge-pill" id="sidebar-task-badge">0</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="sidebar-menu-item-btn" data-page="calendar">
+                <span class="menu-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                </span>
+                <span class="menu-label-text">Calendar Schedule</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="sidebar-menu-item-btn" data-page="kanban">
+                <span class="menu-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 5v11"/><path d="M12 5v6"/><path d="M18 5v14"/></svg>
+                </span>
+                <span class="menu-label-text">Kanban Board</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="sidebar-menu-item-btn" data-page="completed">
+                <span class="menu-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </span>
+                <span class="menu-label-text">Completed Archive</span>
+              </button>
+            </li>
+          </ul>
+
+          <div class="sidebar-group-title" style="margin-top: 1.25rem;">Analytics & Alerts</div>
+          <ul class="sidebar-menu-list">
+            <li>
+              <button type="button" class="sidebar-menu-item-btn" data-page="analytics">
+                <span class="menu-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>
+                </span>
+                <span class="menu-label-text">Productivity Analytics</span>
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <!-- ADMIN SIDEBAR NAVIGATION ITEMS (Hidden in User Mode) -->
+        <div id="admin-sidebar-nav" class="sidebar-nav-group" style="display: none; margin-top: 1rem;">
+          <div class="sidebar-group-title">Organization Dashboard</div>
+          <ul class="sidebar-menu-list">
+            <li>
+              <button type="button" class="sidebar-menu-item-btn" data-page="admin-overview">
+                <span class="menu-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m14.5 9-5 5"/><path d="m9.5 9 5 5"/></svg>
+                </span>
+                <span class="menu-label-text">Admin Overview</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="sidebar-menu-item-btn" data-page="admin-users">
+                <span class="menu-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </span>
+                <span class="menu-label-text">User Management</span>
+              </button>
+            </li>
+          </ul>
+
+          <div class="sidebar-group-title" style="margin-top: 1.25rem;">Tasks & Workload</div>
+          <ul class="sidebar-menu-list">
+            <li>
+              <button type="button" class="sidebar-menu-item-btn" data-page="admin-tasks">
+                <span class="menu-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                </span>
+                <span class="menu-label-text">All Tasks Registry</span>
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
 
-      <nav class="sidebar-nav">
-        <!-- Main Navigation Section -->
-        <div class="nav-group">
-          <div class="nav-section-title">Home</div>
-          <ul class="nav-item-list">
-            <li>
-              <button type="button" class="nav-item-btn active" id="nav-btn-dashboard" data-target="user-dashboard-view">
-                <span class="nav-item-icon">📊</span>
-                <span class="nav-item-label">Dashboard</span>
-              </button>
-            </li>
-            <li>
-              <button type="button" class="nav-item-btn" id="nav-btn-tasks" data-target="user-dashboard-view" data-action="scroll-tasks">
-                <span class="nav-item-icon">📋</span>
-                <span class="nav-item-label">My Tasks</span>
-                <span class="nav-item-badge" id="sidebar-task-count">0</span>
-              </button>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Admin Only Navigation Section -->
-        <div class="nav-group" id="sidebar-admin-section" style="display: none;">
-          <div class="nav-section-title">Admin Management</div>
-          <ul class="nav-item-list">
-            <li>
-              <button type="button" class="nav-item-btn" id="nav-btn-admin-overview" data-target="admin-dashboard-view" data-tab="users">
-                <span class="nav-item-icon">🛡️</span>
-                <span class="nav-item-label">Admin Overview</span>
-              </button>
-            </li>
-            <li>
-              <button type="button" class="nav-item-btn" id="nav-btn-admin-users" data-target="admin-dashboard-view" data-tab="users">
-                <span class="nav-item-icon">👥</span>
-                <span class="nav-item-label">Registered Users</span>
-              </button>
-            </li>
-            <li>
-              <button type="button" class="nav-item-btn" id="nav-btn-admin-tasks" data-target="admin-dashboard-view" data-tab="tasks">
-                <span class="nav-item-icon">📁</span>
-                <span class="nav-item-label">All System Tasks</span>
-              </button>
-            </li>
-          </ul>
-        </div>
-      </nav>
-
-      <!-- Sidebar Footer User Profile -->
-      <div class="sidebar-footer" id="sidebar-user-footer" style="display: none;">
+      <!-- Bottom User Profile Card in Sidebar -->
+      <div class="sidebar-bottom-bar" id="sidebar-footer-card">
         <div class="user-mini-card">
-          <div class="user-avatar-circle" id="sidebar-avatar-char">U</div>
-          <div class="user-info-text">
-            <span class="user-name-title" id="sidebar-user-name">User</span>
-            <span class="user-role-label" id="sidebar-user-role">Role</span>
+          <div class="user-avatar-circle" id="sidebar-user-avatar">U</div>
+          <div class="user-text-meta">
+            <span class="user-text-name" id="sidebar-user-name">Alex Morgan</span>
+            <span class="user-text-role" id="sidebar-user-role">Product & Engineering</span>
           </div>
         </div>
       </div>
     </aside>
 
     <!-- ==================================================================
-         2. Main Application Wrapper (Header + Content Views)
+         2. MAIN VIEWPORT
          ================================================================== -->
-    <div class="main-wrapper">
+    <div class="main-content-flow">
 
-      <!-- Top Sticky Header Bar -->
-      <header class="top-header" id="top-header" role="banner">
-        <div class="header-left">
-          <button type="button" class="mobile-menu-btn" id="mobile-menu-toggle" aria-label="Toggle navigation menu">
-            ☰
-          </button>
-          <div class="header-search">
-            <span class="header-search-icon">🔍</span>
-            <input type="text" id="top-search-input" placeholder="Search tasks, categories, or notes..." aria-label="Quick search">
-          </div>
+      <!-- Header (Exact TaskFlow Spike Header) -->
+      <header class="sticky-top-header" id="top-header-bar">
+        <div class="header-left-title-box">
+          <span class="status-active-pulse"></span>
+          <h1 class="header-page-title" id="header-page-title">Dashboard Overview</h1>
+          <span class="header-portal-tag" id="header-portal-tag">G7 Workspace</span>
         </div>
 
-        <div class="header-right">
-          <!-- Demo Mock vs Live API Mode Switcher -->
-          <button type="button" class="mode-pill" id="mode-toggle-btn" title="Toggle between Demo Mock Mode and Krishna's Live Express Backend">
-            <span class="mode-dot" aria-hidden="true">●</span>
-            <span id="mode-pill-label">⚡ Demo Mock Mode</span>
+        <div class="header-actions-right">
+          <!-- Quick Add Task -->
+          <button type="button" class="btn-taskflow-primary" id="btn-quick-add-task">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>Add Task</span>
           </button>
 
-          <!-- Logout Button (authenticated only) -->
-          <button type="button" class="logout-icon-btn" id="header-logout-btn" style="display: none;">
-            <span>🚪</span>
-            <span>Logout</span>
+          <!-- Toggle Role Switch Button (User <-> Admin) -->
+          <button type="button" class="btn-role-switch" id="btn-role-toggle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+            <span id="role-toggle-text">Admin Portal</span>
+          </button>
+
+          <!-- Mode indicator (Mock vs Live API) -->
+          <button type="button" class="btn-mode-indicator" id="btn-mode-toggle" title="Click to toggle between Demo Mock Mode and Krishna's Live Express Backend">
+            <span style="font-size:10px;">●</span>
+            <span id="mode-text-label">Demo Mode</span>
+          </button>
+
+          <!-- Notification Bell -->
+          <button type="button" class="btn-icon-soft" id="btn-notifications-bell" title="Notifications">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            <span class="bell-badge-dot"></span>
+          </button>
+
+          <!-- Logout Button -->
+          <button type="button" class="btn-icon-soft" id="btn-logout" title="Sign Out">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
           </button>
         </div>
       </header>
 
-      <!-- Main Body Container -->
-      <main class="content-body">
+      <!-- Scrollable Body Views Area -->
+      <main class="view-body-wrapper">
 
         <!-- ==============================================================
-             VIEW 1: Authentication View (Login & Registration)
+             VIEW: AUTHENTICATION (Split Screen Spike Auth1)
              ============================================================== -->
-        <section class="view-section active" id="auth-view" aria-label="Authentication">
-          <div class="auth-page-container">
-            <div class="auth-card-box">
-              <div class="auth-card-header">
-                <img src="assets/taskflow-logo.png" alt="TaskFlow Logo" onerror="this.src='assets/taskflow-icon.png'">
-                <h1>Sign in to TaskFlow</h1>
-                <p>Collaborative To-Do Platform • Group 7 Winter Internship</p>
+        <section class="app-view-panel active" id="view-auth">
+          <div class="auth-split-wrapper">
+            <!-- Left Showcase Panel -->
+            <div class="auth-left-showcase">
+              <div class="brand-click-target">
+                <img src="assets/taskflow-icon.png" alt="TASKFLOW" class="brand-icon-img" style="width:40px;height:40px;">
+                <div>
+                  <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span style="font-weight:800;font-size:1.5rem;letter-spacing:-0.02em;color:#0F172A;">TASKFLOW</span>
+                    <span class="brand-tag-pro">PRO SaaS</span>
+                  </div>
+                  <p style="font-size:11px;font-weight:600;color:#94A3B8;">Designed & Developed by Internship Team G7</p>
+                </div>
               </div>
 
-              <!-- Auth Tabs -->
-              <div class="auth-tab-row" role="tablist">
-                <button type="button" class="auth-tab-btn active" id="tab-login-btn" role="tab" aria-selected="true">
-                  Sign In
-                </button>
-                <button type="button" class="auth-tab-btn" id="tab-register-btn" role="tab" aria-selected="false">
-                  Create Account
-                </button>
-              </div>
-
-              <div class="auth-card-body">
-                <!-- Sign In Form -->
-                <div id="login-form-container">
-                  <form id="login-form" novalidate>
-                    <div class="form-group-item">
-                      <label for="login-email" class="form-label-text">Email Address <span class="req">*</span></label>
-                      <input type="email" id="login-email" class="text-input-field" placeholder="you@taskflow.com" required autocomplete="email">
-                      <div class="field-error-msg" id="login-email-error"></div>
+              <!-- Center Showcase Card -->
+              <div style="max-width:520px;margin:auto 0;width:100%;">
+                <div class="spike-card" style="padding:1.5rem;background:#ffffff;box-shadow:0 12px 32px rgba(17,28,45,0.06);">
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:0.75rem;border-bottom:1px solid #EEF2F6;">
+                    <div style="display:flex;align-items:center;gap:0.6rem;">
+                      <div style="width:32px;height:32px;border-radius:8px;background:#ECF2FF;color:#5D87FF;display:grid;place-items:center;font-weight:700;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                      </div>
+                      <div>
+                        <h4 style="font-size:12px;font-weight:700;color:#0F172A;">Sprint 4 Delivery Velocity</h4>
+                        <p style="font-size:10px;color:#94A3B8;">Team G7 Workspace</p>
+                      </div>
                     </div>
+                    <span style="padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:700;background:#E6FFFA;color:#13DEB9;">
+                      94.2% On-Time
+                    </span>
+                  </div>
 
-                    <div class="form-group-item">
-                      <label for="login-password" class="form-label-text">Password <span class="req">*</span></label>
-                      <input type="password" id="login-password" class="text-input-field" placeholder="••••••••" required autocomplete="current-password">
-                      <div class="field-error-msg" id="login-password-error"></div>
+                  <!-- 3 Micro Metrics -->
+                  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-top:1rem;">
+                    <div style="padding:0.75rem;border-radius:0.75rem;background:#F4F6FA;">
+                      <span style="font-size:10px;font-weight:700;text-transform:uppercase;color:#94A3B8;display:block;">Total Tasks</span>
+                      <span style="font-size:1.15rem;font-weight:800;color:#0F172A;">18 Active</span>
                     </div>
+                    <div style="padding:0.75rem;border-radius:0.75rem;background:rgba(230,255,250,0.6);">
+                      <span style="font-size:10px;font-weight:700;text-transform:uppercase;color:#13DEB9;display:block;">Completed</span>
+                      <span style="font-size:1.15rem;font-weight:800;color:#13DEB9;">12 Done</span>
+                    </div>
+                    <div style="padding:0.75rem;border-radius:0.75rem;background:rgba(236,242,255,0.7);">
+                      <span style="font-size:10px;font-weight:700;text-transform:uppercase;color:#5D87FF;display:block;">Backlog</span>
+                      <span style="font-size:1.15rem;font-weight:800;color:#5D87FF;">5 In Flow</span>
+                    </div>
+                  </div>
 
-                    <div class="field-error-msg" id="login-general-error"></div>
-
-                    <button type="submit" class="btn btn-primary" id="login-submit-btn" style="width: 100%;">
-                      <span>Sign In</span>
-                    </button>
-                  </form>
-
-                  <!-- Quick Demo One-Click Logins -->
-                  <div class="demo-account-pill-box">
-                    <div class="demo-title-bar">⚡ Instant Evaluator Demo Logins</div>
-                    <div class="demo-btn-grid">
-                      <button type="button" class="btn btn-secondary btn-sm" id="quick-demo-user-btn">
-                        <span>👤</span> Rashika (User)
-                      </button>
-                      <button type="button" class="btn btn-secondary btn-sm" id="quick-demo-admin-btn">
-                        <span>🛡️</span> Admin Account
-                      </button>
+                  <!-- Progress Bar -->
+                  <div style="margin-top:1rem;">
+                    <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:#64748B;margin-bottom:0.4rem;">
+                      <span>Milestone Progress</span>
+                      <span style="color:#0F172A;">78% Complete</span>
+                    </div>
+                    <div style="width:100%;height:8px;background:#F4F6FA;border-radius:9999px;overflow:hidden;">
+                      <div style="height:100%;width:78%;background:linear-gradient(90deg,#5D87FF,#13DEB9);border-radius:9999px;"></div>
                     </div>
                   </div>
                 </div>
 
-                <!-- Registration Form -->
-                <div id="register-form-container" style="display: none;">
-                  <form id="register-form" novalidate>
-                    <div class="form-group-item">
-                      <label for="reg-name" class="form-label-text">Full Name <span class="req">*</span></label>
-                      <input type="text" id="reg-name" class="text-input-field" placeholder="e.g. Rashika Prajapati" required autocomplete="name">
-                      <div class="field-error-msg" id="reg-name-error"></div>
-                    </div>
-
-                    <div class="form-group-item">
-                      <label for="reg-email" class="form-label-text">Email Address <span class="req">*</span></label>
-                      <input type="email" id="reg-email" class="text-input-field" placeholder="name@example.com" required autocomplete="email">
-                      <div class="field-error-msg" id="reg-email-error"></div>
-                    </div>
-
-                    <div class="form-group-item">
-                      <label for="reg-password" class="form-label-text">Password <span class="req">*</span></label>
-                      <input type="password" id="reg-password" class="text-input-field" placeholder="Min. 6 characters" required minlength="6" autocomplete="new-password">
-                      <div class="field-error-msg" id="reg-password-error"></div>
-                    </div>
-
-                    <div class="form-group-item">
-                      <label for="reg-role" class="form-label-text">Role Permissions</label>
-                      <select id="reg-role" class="select-input-field">
-                        <option value="user" selected>Standard User (Personal Dashboard)</option>
-                        <option value="admin">Administrator (Platform Management)</option>
-                      </select>
-                    </div>
-
-                    <div class="field-error-msg" id="reg-general-error"></div>
-
-                    <button type="submit" class="btn btn-primary" id="register-submit-btn" style="width: 100%;">
-                      <span>Create Account</span>
-                    </button>
-                  </form>
+                <div style="margin-top:2rem;">
+                  <h2 style="font-size:1.85rem;font-weight:800;color:#0F172A;line-height:1.25;">
+                    A smarter way to organise tasks and manage productivity.
+                  </h2>
+                  <p style="font-size:0.9rem;color:#64748B;margin-top:0.6rem;line-height:1.5;">
+                    TASKFLOW provides modern engineering teams with visual sprint velocity, calendar timelines, and automated SLA tracking built with production SaaS standards.
+                  </p>
                 </div>
+              </div>
+
+              <div style="font-size:12px;color:#94A3B8;font-weight:500;">
+                © 2026 TASKFLOW | Internship Team G7. All Rights Reserved.
+              </div>
+            </div>
+
+            <!-- Right Form Panel -->
+            <div class="auth-right-form-pane">
+              <div class="auth-form-card">
+                <div>
+                  <h2 style="font-size:1.85rem;font-weight:800;color:#0F172A;letter-spacing:-0.02em;">
+                    Welcome to TASKFLOW
+                  </h2>
+                  <p style="font-size:0.85rem;color:#94A3B8;margin-top:0.25rem;">
+                    Your Admin & Team Productivity Workspace
+                  </p>
+                </div>
+
+                <!-- One-click Demo Credentials Bar (Spike Style) -->
+                <div class="social-login-grid">
+                  <button type="button" class="btn-social-auth" id="btn-quick-admin-login">
+                    <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="#5D87FF" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+                    <span>Admin Demo</span>
+                  </button>
+                  <button type="button" class="btn-social-auth" id="btn-quick-user-login">
+                    <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="#13DEB9" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>User Demo</span>
+                  </button>
+                </div>
+
+                <div class="auth-divider-line">
+                  <span class="auth-divider-text">or sign in with credentials</span>
+                </div>
+
+                <div id="auth-error-alert" style="display:none;padding:0.75rem;border-radius:0.75rem;background:#FDEEEB;border:1px solid rgba(250,137,107,0.3);color:#FA896B;font-size:12px;font-weight:700;margin-bottom:1rem;"></div>
+
+                <form id="auth-main-form" novalidate>
+                  <div class="form-field-group">
+                    <label class="form-label-bold" for="input-auth-email">Work Email Address</label>
+                    <div class="input-icon-container">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                      <input type="email" id="input-auth-email" class="form-control-input" placeholder="name@taskflow.io" required value="alex.morgan@taskflow.io">
+                    </div>
+                  </div>
+
+                  <div class="form-field-group">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">
+                      <label class="form-label-bold" for="input-auth-password" style="margin-bottom:0;">Password</label>
+                      <span style="font-size:11px;font-weight:700;color:#5D87FF;cursor:pointer;">Forgot Password?</span>
+                    </div>
+                    <div class="input-icon-container">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      <input type="password" id="input-auth-password" class="form-control-input" placeholder="••••••••••••" required value="password123">
+                    </div>
+                  </div>
+
+                  <button type="submit" class="btn-taskflow-primary" id="btn-auth-submit" style="width:100%;padding:0.75rem;font-size:0.95rem;justify-content:center;margin-top:1rem;">
+                    <span>Sign In</span>
+                  </button>
+                </form>
               </div>
             </div>
           </div>
         </section>
 
         <!-- ==============================================================
-             VIEW 2: User Dashboard View
+             VIEW: USER DASHBOARD (Exact TaskFlow DashboardOverview)
              ============================================================== -->
-        <section class="view-section" id="user-dashboard-view" aria-label="User Dashboard">
-          
-          <!-- Spike Signature Welcome / Sprint Hero Card -->
-          <div class="spike-hero-card">
-            <div class="hero-content">
-              <div class="hero-meta-row">
-                <span class="sprint-tag">Sprint 4 Active</span>
-                <span class="hero-date" id="hero-date-text">📅 Today is Wednesday, Nov 20, 2026</span>
+        <section class="app-view-panel" id="view-dashboard-overview">
+          <!-- 1. Spike Hero Welcome Card -->
+          <div class="spike-card spike-hero-card">
+            <div class="hero-left-desc-box">
+              <div class="hero-sprint-badge-row">
+                <span class="hero-sprint-pill">Sprint 4 Active</span>
+                <span class="hero-date-caption" id="dash-date-str">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                  <span>Wednesday, Nov 20, 2026</span>
+                </span>
               </div>
-              <h1 class="hero-title">
-                <span id="hero-greeting-text">Good afternoon</span>, <span id="dash-user-name">Rashika</span>! 👋
+              <h1 class="hero-greeting-heading">
+                <span id="dash-greeting-phrase">Good afternoon</span>, <span id="dash-user-firstname">Alex</span>!
               </h1>
-              <p class="hero-desc">
-                Welcome to your Group 7 TaskFlow productivity center. Here is your active milestone summary and performance breakdown.
+              <p class="hero-welcome-subtext">
+                Here's what is happening with your tasks today. You have <strong id="hero-scheduled-count" style="color:#1E293B;">4 tasks scheduled</strong> and <strong id="hero-overdue-count" style="color:#FA896B;">1 overdue milestone</strong> requiring attention.
               </p>
-              <div class="hero-action-row">
-                <button type="button" class="btn btn-primary" id="open-create-task-btn">
-                  <span>➕</span> Create New Task
+              <div class="hero-cta-buttons-row">
+                <button type="button" class="btn-taskflow-primary" id="hero-quick-add-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  <span>Quick Add Task</span>
                 </button>
-                <button type="button" class="btn btn-secondary" id="scroll-to-tasks-btn">
-                  <span>📋</span> View Task List
+                <button type="button" class="btn-hero-secondary" id="hero-view-tasks-btn">
+                  <span>Open Task Catalog</span>
                 </button>
               </div>
             </div>
-            <div class="hero-illustration">
-              <img src="assets/hero.png" alt="TaskFlow Productivity" onerror="this.style.display='none'">
-            </div>
-          </div>
 
-          <!-- 4 Modern KPI / Statistics Cards -->
-          <div class="kpi-grid">
-            <div class="kpi-card">
-              <div class="kpi-icon-box blue">📋</div>
-              <div class="kpi-details">
-                <span class="kpi-label">Total Tasks</span>
-                <span class="kpi-value" id="kpi-total-tasks">0</span>
-                <span class="kpi-subtext">All assigned to-dos</span>
+            <!-- Right Circular Target Completion Widget -->
+            <div class="hero-velocity-widget">
+              <div class="velocity-circle-svg-wrap">
+                <svg viewBox="0 0 36 36">
+                  <path stroke-width="3.5" stroke="#F1F5F9" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  <path id="hero-svg-donut-fill" stroke-width="3.5" stroke="#5D87FF" stroke-linecap="round" fill="none" stroke-dasharray="75, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                </svg>
+                <span class="velocity-rate-number" id="hero-completion-pct">75%</span>
               </div>
-            </div>
-
-            <div class="kpi-card">
-              <div class="kpi-icon-box orange">⏳</div>
-              <div class="kpi-details">
-                <span class="kpi-label">In Progress</span>
-                <span class="kpi-value" id="kpi-pending-tasks">0</span>
-                <span class="kpi-subtext">Active milestones</span>
-              </div>
-            </div>
-
-            <div class="kpi-card">
-              <div class="kpi-icon-box green">✅</div>
-              <div class="kpi-details">
-                <span class="kpi-label">Completed</span>
-                <span class="kpi-value" id="kpi-completed-tasks">0</span>
-                <span class="kpi-subtext">Accomplished goals</span>
-              </div>
-            </div>
-
-            <div class="kpi-card">
-              <div class="kpi-icon-box coral">🚨</div>
-              <div class="kpi-details">
-                <span class="kpi-label">Overdue</span>
-                <span class="kpi-value" id="kpi-overdue-tasks">0</span>
-                <span class="kpi-subtext">Immediate attention</span>
+              <div class="velocity-text-info">
+                <span class="velocity-title-tag">Sprint Velocity</span>
+                <span class="velocity-done-count" id="hero-done-ratio">3 of 4 Done</span>
+                <span class="velocity-trend-pill">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                  <span>+14.8% vs last sprint</span>
+                </span>
               </div>
             </div>
           </div>
 
-          <!-- 2 Interactive Analytics Charts (Native SVG) -->
-          <div class="charts-grid">
-            <!-- Chart 1: Task Completion & Status Doughnut -->
-            <div class="chart-card">
-              <div class="chart-header">
-                <div class="chart-title-wrap">
-                  <h3>Task Completion Status</h3>
-                  <p>Distribution of current tasks by workflow state</p>
+          <!-- 2. 4 StatCard Grid (Exact Spike StatCards) -->
+          <div class="statcards-four-grid">
+            <!-- Total Tasks -->
+            <div class="spike-card statcard-box">
+              <div class="statcard-top-row">
+                <span class="statcard-title-text">Total Tasks</span>
+                <div class="statcard-icon-container blue">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
                 </div>
               </div>
-              <div class="svg-chart-container" id="user-status-donut-chart">
-                <!-- Dynamically rendered SVG Donut -->
+              <div class="statcard-val-row">
+                <span class="statcard-big-number" id="kpi-total-val">0</span>
+                <span class="statcard-change-chip pos">+12% this week</span>
               </div>
-              <div class="chart-legend" id="user-status-donut-legend">
-                <!-- Legend items populated via JS -->
-              </div>
+              <span class="statcard-subtext-note">Active across all domains</span>
             </div>
 
-            <!-- Chart 2: Task Distribution by Priority -->
-            <div class="chart-card">
-              <div class="chart-header">
-                <div class="chart-title-wrap">
-                  <h3>Tasks by Priority</h3>
-                  <p>Urgency distribution across high, medium & low priorities</p>
+            <!-- Completed -->
+            <div class="spike-card statcard-box">
+              <div class="statcard-top-row">
+                <span class="statcard-title-text">Completed</span>
+                <div class="statcard-icon-container green">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                 </div>
               </div>
-              <div class="svg-chart-container" id="user-priority-bar-chart">
-                <!-- Dynamically rendered SVG Bar Chart -->
+              <div class="statcard-val-row">
+                <span class="statcard-big-number" id="kpi-completed-val">0</span>
+                <span class="statcard-change-chip pos" id="kpi-completion-rate-chip">75% rate</span>
               </div>
-              <div class="chart-legend">
-                <span class="legend-item"><span class="legend-dot" style="background:#fa896b;"></span> High</span>
-                <span class="legend-item"><span class="legend-dot" style="background:#5d87ff;"></span> Medium</span>
-                <span class="legend-item"><span class="legend-dot" style="background:#13deb9;"></span> Low</span>
+              <span class="statcard-subtext-note">Successfully resolved</span>
+            </div>
+
+            <!-- In Progress -->
+            <div class="spike-card statcard-box">
+              <div class="statcard-top-row">
+                <span class="statcard-title-text">In Progress</span>
+                <div class="statcard-icon-container orange">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
               </div>
+              <div class="statcard-val-row">
+                <span class="statcard-big-number" id="kpi-pending-val">0</span>
+                <span class="statcard-change-chip neu">Active sprint queue</span>
+              </div>
+              <span class="statcard-subtext-note">Active sprint queue</span>
+            </div>
+
+            <!-- Overdue Tasks -->
+            <div class="spike-card statcard-box">
+              <div class="statcard-top-row">
+                <span class="statcard-title-text">Overdue Tasks</span>
+                <div class="statcard-icon-container coral">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+              </div>
+              <div class="statcard-val-row">
+                <span class="statcard-big-number" id="kpi-overdue-val">0</span>
+                <span class="statcard-change-chip neg">Requires action</span>
+              </div>
+              <span class="statcard-subtext-note">Exceeded scheduled SLA</span>
             </div>
           </div>
 
-          <!-- Task Management Panel & Table/Cards -->
-          <div class="tasks-panel" id="task-list-section">
-            <div class="panel-header-toolbar">
-              <div class="toolbar-top-row">
-                <div class="panel-title">
-                  <span>My Tasks</span>
-                  <span class="badge-pill badge-tag-category" id="task-count-badge">0 items</span>
+          <!-- 3. Two-Column Charts (Task Completion Velocity + Status Doughnut) -->
+          <div class="two-charts-row-grid">
+            <!-- Left 2 Cols: 7-Day Completion Velocity SVG -->
+            <div class="spike-card chart-spike-card">
+              <div class="chart-title-area">
+                <div>
+                  <h3 class="chart-title-bold">Task Completion Velocity</h3>
+                  <p class="chart-subtitle-faded">Tasks created vs completed over the current 7-day period</p>
                 </div>
-
-                <!-- Status Filter Pills -->
-                <div class="filter-pills-group" role="radiogroup" aria-label="Filter tasks by status">
-                  <button type="button" class="filter-pill-btn active" data-status="all">All</button>
-                  <button type="button" class="filter-pill-btn" data-status="Pending">Pending</button>
-                  <button type="button" class="filter-pill-btn" data-status="In Progress">In Progress</button>
-                  <button type="button" class="filter-pill-btn" data-status="Completed">Completed</button>
+                <div style="display:flex;gap:1rem;font-size:11px;font-weight:700;">
+                  <span style="display:inline-flex;align-items:center;gap:0.3rem;"><span style="width:8px;height:8px;border-radius:50%;background:#5D87FF;"></span> Created</span>
+                  <span style="display:inline-flex;align-items:center;gap:0.3rem;"><span style="width:8px;height:8px;border-radius:50%;background:#13DEB9;"></span> Completed</span>
                 </div>
               </div>
+              <div class="chart-render-target" id="chart-user-velocity-bars"></div>
+            </div>
 
-              <div class="toolbar-controls-row">
-                <!-- Search input -->
-                <div class="search-field-box">
-                  <span class="search-field-icon">🔍</span>
-                  <input type="text" id="task-search-input" placeholder="Filter tasks by title, category, or notes...">
+            <!-- Right 1 Col: Status Distribution SVG Doughnut -->
+            <div class="spike-card chart-spike-card">
+              <div class="chart-title-area">
+                <div>
+                  <h3 class="chart-title-bold">Task Status Distribution</h3>
+                  <p class="chart-subtitle-faded">Active distribution across sprint lifecycle</p>
                 </div>
+              </div>
+              <div class="chart-render-target" id="chart-user-status-donut"></div>
+              <div class="chart-legend-box" id="legend-user-status"></div>
+            </div>
+          </div>
 
-                <!-- Priority Filter -->
-                <select id="priority-filter-select" class="select-control" aria-label="Filter by priority">
-                  <option value="all">All Priorities</option>
-                  <option value="High">High Priority</option>
-                  <option value="Medium">Medium Priority</option>
-                  <option value="Low">Low Priority</option>
-                </select>
-
-                <!-- Sorting Control -->
-                <select id="task-sort-select" class="select-control" aria-label="Sort tasks">
-                  <option value="due_date_asc">Due Date (Earliest)</option>
-                  <option value="priority_desc">Priority (High to Low)</option>
-                  <option value="newest">Created (Newest First)</option>
-                </select>
+          <!-- 4. Sprint Task Catalog Table (Exact TaskTable from Reference) -->
+          <div class="spike-card task-catalog-card" id="catalog-section-anchor">
+            <div class="catalog-header-bar">
+              <div class="catalog-title-wrap">
+                <span class="catalog-title-text">Sprint Task Catalog</span>
+                <span class="catalog-count-pill" id="catalog-total-badge">0 tasks</span>
+              </div>
+              <div style="font-size:11px;color:#94A3B8;font-weight:600;" id="catalog-showing-text">
+                Showing all matching items
               </div>
             </div>
 
-            <!-- Dynamic Task Cards List -->
-            <div id="task-items-container" class="task-items-list">
-              <!-- Rendered dynamically by app.js -->
+            <!-- Filter Controls Toolbar -->
+            <div class="catalog-filter-toolbar">
+              <div class="search-input-wrapper">
+                <svg class="search-icon-inside" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="task-filter-search" class="search-text-field" placeholder="Search tasks by title, category, or notes...">
+              </div>
+
+              <!-- Status Filter -->
+              <select id="task-filter-status" class="select-dropdown-filter">
+                <option value="All">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+              </select>
+
+              <!-- Priority Filter -->
+              <select id="task-filter-priority" class="select-dropdown-filter">
+                <option value="All">All Priorities</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+
+              <!-- Category Filter -->
+              <select id="task-filter-category" class="select-dropdown-filter">
+                <option value="All">All Categories</option>
+                <option value="Development">Development</option>
+                <option value="Design">Design</option>
+                <option value="QA">QA</option>
+                <option value="Internship">Internship</option>
+              </select>
+            </div>
+
+            <!-- Table -->
+            <div class="table-responsive-box">
+              <table class="taskflow-data-table">
+                <thead>
+                  <tr>
+                    <th style="width:40px;"></th>
+                    <th>Task Title & Overview</th>
+                    <th>Category</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Due Date</th>
+                    <th style="text-align:right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="task-table-tbody">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
             </div>
           </div>
         </section>
 
         <!-- ==============================================================
-             VIEW 3: Admin Dashboard View
+             VIEW: ADMIN OVERVIEW & USER MANAGEMENT
              ============================================================== -->
-        <section class="view-section" id="admin-dashboard-view" aria-label="Admin Dashboard">
-          
-          <!-- Admin Hero Banner -->
-          <div class="spike-hero-card">
-            <div class="hero-content">
-              <div class="hero-meta-row">
-                <span class="sprint-tag" style="background:#fef5e5; color:#b56e00;">Admin Privileges Active</span>
-                <span class="hero-date">System Overseer Console</span>
+        <section class="app-view-panel" id="view-admin-overview">
+          <!-- Admin Welcome Banner -->
+          <div class="spike-card" style="padding:1.75rem 2rem;background:linear-gradient(90deg, #0F172A 0%, #2E1065 50%, #0F172A 100%);color:#ffffff;margin-bottom:1.75rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+              <div>
+                <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;">
+                  <span style="font-size:10px;font-weight:800;text-transform:uppercase;background:rgba(147,51,234,0.8);color:#FAF5FF;padding:2px 8px;border-radius:9999px;">
+                    Admin Console
+                  </span>
+                  <span style="font-size:11px;color:#D8B4FE;">Organization Master Control</span>
+                </div>
+                <h1 style="font-size:1.85rem;font-weight:800;letter-spacing:-0.02em;">
+                  TASKFLOW Enterprise Health
+                </h1>
+                <p style="font-size:0.85rem;color:#CBD5E1;margin-top:0.3rem;">
+                  Global monitoring for team productivity, user accounts, and system-wide task execution
+                </p>
               </div>
-              <h1 class="hero-title">Admin Control Center 🛡️</h1>
-              <p class="hero-desc">
-                System-wide overview of registered accounts, total tasks distribution, and platform health analytics.
-              </p>
-              <div class="hero-action-row">
-                <button type="button" class="btn btn-outline-primary" id="admin-refresh-btn">
-                  <span>🔄</span> Refresh Platform Data
+
+              <div style="display:flex;align-items:center;gap:0.75rem;">
+                <button type="button" class="btn-hero-secondary" id="btn-admin-refresh" style="background:rgba(30,41,59,0.8);color:#ffffff;border-color:#475569;">
+                  <span>Refresh Data</span>
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- 4 Admin System KPI Cards -->
-          <div class="kpi-grid">
-            <div class="kpi-card">
-              <div class="kpi-icon-box purple">👥</div>
-              <div class="kpi-details">
-                <span class="kpi-label">Registered Users</span>
-                <span class="kpi-value" id="admin-stat-users">0</span>
-                <span class="kpi-subtext">Total active team members</span>
-              </div>
+          <!-- 6 StatCards Grid -->
+          <div class="statcards-four-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+            <div class="spike-card statcard-box">
+              <span class="statcard-title-text">Total Users</span>
+              <div class="statcard-val-row"><span class="statcard-big-number" id="admin-kpi-users">0</span></div>
+              <span class="statcard-subtext-note">Registered accounts</span>
             </div>
-
-            <div class="kpi-card">
-              <div class="kpi-icon-box blue">📊</div>
-              <div class="kpi-details">
-                <span class="kpi-label">All System Tasks</span>
-                <span class="kpi-value" id="admin-stat-tasks">0</span>
-                <span class="kpi-subtext">Platform-wide volume</span>
-              </div>
+            <div class="spike-card statcard-box">
+              <span class="statcard-title-text">Total Tasks</span>
+              <div class="statcard-val-row"><span class="statcard-big-number" id="admin-kpi-tasks">0</span></div>
+              <span class="statcard-subtext-note">Across all teams</span>
             </div>
-
-            <div class="kpi-card">
-              <div class="kpi-icon-box orange">⏳</div>
-              <div class="kpi-details">
-                <span class="kpi-label">System Pending</span>
-                <span class="kpi-value" id="admin-stat-pending">0</span>
-                <span class="kpi-subtext">Unfinished milestones</span>
-              </div>
+            <div class="spike-card statcard-box">
+              <span class="statcard-title-text">Completed</span>
+              <div class="statcard-val-row"><span class="statcard-big-number" id="admin-kpi-completed">0</span></div>
+              <span class="statcard-subtext-note">Sprint velocity high</span>
             </div>
-
-            <div class="kpi-card">
-              <div class="kpi-icon-box green">✅</div>
-              <div class="kpi-details">
-                <span class="kpi-label">System Completed</span>
-                <span class="kpi-value" id="admin-stat-completed">0</span>
-                <span class="kpi-subtext">Delivered deliverables</span>
-              </div>
+            <div class="spike-card statcard-box">
+              <span class="statcard-title-text">Pending Queue</span>
+              <div class="statcard-val-row"><span class="statcard-big-number" id="admin-kpi-pending">0</span></div>
+              <span class="statcard-subtext-note">Active workloads</span>
             </div>
           </div>
 
-          <!-- 2 Admin System Analytics Charts (Native SVG) -->
-          <div class="charts-grid">
-            <!-- Admin Chart 1: Overall System Task Status -->
-            <div class="chart-card">
-              <div class="chart-header">
-                <div class="chart-title-wrap">
-                  <h3>Overall Task Status Distribution</h3>
-                  <p>Aggregate status breakdown across all users</p>
+          <!-- 2 Admin Charts (Overall Donut + Workload Bar Chart) -->
+          <div class="two-charts-row-grid">
+            <div class="spike-card chart-spike-card">
+              <div class="chart-title-area">
+                <div>
+                  <h3 class="chart-title-bold">Overall System Status</h3>
+                  <p class="chart-subtitle-faded">Platform-wide milestone completion status</p>
                 </div>
               </div>
-              <div class="svg-chart-container" id="admin-status-donut-chart">
-                <!-- Dynamically populated SVG -->
-              </div>
-              <div class="chart-legend" id="admin-status-donut-legend"></div>
+              <div class="chart-render-target" id="chart-admin-status-donut"></div>
+              <div class="chart-legend-box" id="legend-admin-status"></div>
             </div>
 
-            <!-- Admin Chart 2: Tasks by User Bar Chart -->
-            <div class="chart-card">
-              <div class="chart-header">
-                <div class="chart-title-wrap">
-                  <h3>Tasks by Team Member</h3>
-                  <p>Workload volume distribution among registered accounts</p>
+            <div class="spike-card chart-spike-card">
+              <div class="chart-title-area">
+                <div>
+                  <h3 class="chart-title-bold">Tasks by Team Member</h3>
+                  <p class="chart-subtitle-faded">Workload volume distributed among accounts</p>
                 </div>
               </div>
-              <div class="svg-chart-container" id="admin-user-bar-chart">
-                <!-- Dynamically populated SVG -->
-              </div>
-              <div class="chart-legend">
-                <span class="legend-item"><span class="legend-dot" style="background:#5d87ff;"></span> Total Tasks</span>
-                <span class="legend-item"><span class="legend-dot" style="background:#13deb9;"></span> Completed</span>
-              </div>
+              <div class="chart-render-target" id="chart-admin-workload-bars"></div>
             </div>
           </div>
 
-          <!-- Admin Tab Switcher -->
-          <div class="admin-tab-bar" role="tablist">
-            <button type="button" class="admin-tab-nav-btn active" id="admin-tab-users-btn">
-              <span>👥</span> Registered Users
-            </button>
-            <button type="button" class="admin-tab-nav-btn" id="admin-tab-tasks-btn">
-              <span>📋</span> All Platform Tasks
-            </button>
-          </div>
+          <!-- Admin Tabs & Table -->
+          <div class="spike-card task-catalog-card" style="margin-top:1.75rem;">
+            <div class="catalog-header-bar">
+              <div style="display:flex;gap:0.5rem;">
+                <button type="button" class="btn-role-switch admin-active" id="admin-tab-users-btn">
+                  <span>Registered Users</span>
+                </button>
+                <button type="button" class="btn-role-switch" id="admin-tab-tasks-btn">
+                  <span>All Tasks Registry</span>
+                </button>
+              </div>
+            </div>
 
-          <!-- Admin Tables Container -->
-          <div class="tasks-panel">
-            <!-- Registered Users Table -->
-            <div id="admin-users-panel" class="table-wrapper">
-              <table class="taskflow-table" id="admin-users-table">
+            <!-- Users Table Panel -->
+            <div id="panel-admin-users" class="table-responsive-box">
+              <table class="taskflow-data-table">
                 <thead>
                   <tr>
                     <th>User ID</th>
-                    <th>Full Name</th>
+                    <th>Member Profile</th>
                     <th>Email Address</th>
                     <th>Role</th>
+                    <th>Department</th>
                     <th>Tasks Count</th>
                     <th>Completed</th>
-                    <th>Joined Date</th>
                   </tr>
                 </thead>
                 <tbody id="admin-users-tbody"></tbody>
               </table>
             </div>
 
-            <!-- All System Tasks Table (Hidden initially) -->
-            <div id="admin-tasks-panel" class="table-wrapper" style="display: none;">
-              <table class="taskflow-table" id="admin-tasks-table">
+            <!-- Tasks Table Panel (Hidden initially) -->
+            <div id="panel-admin-tasks" class="table-responsive-box" style="display:none;">
+              <table class="taskflow-data-table">
                 <thead>
                   <tr>
                     <th>Task ID</th>
@@ -531,46 +680,45 @@
   </div>
 
   <!-- ====================================================================
-       3. Modal: Create / Edit Task
+       3. TASK MODAL (Add & Edit Task)
        ==================================================================== -->
-  <div class="modal-overlay" id="task-modal" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
-    <div class="modal-dialog-box">
-      <div class="modal-top-bar">
-        <h2 class="modal-heading" id="task-modal-title">Create New Task</h2>
-        <button type="button" class="modal-close-icon" id="task-modal-close-btn" aria-label="Close dialog">✕</button>
+  <div class="modal-backdrop-veil" id="modal-task-form">
+    <div class="modal-window-box">
+      <div class="modal-header-strip">
+        <h3 class="modal-title-bold" id="task-modal-heading">Create New Task</h3>
+        <button type="button" class="modal-close-cross" id="btn-close-task-modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
 
-      <form id="task-form" novalidate>
-        <input type="hidden" id="task-id-input">
-        <div class="modal-inner-body">
-          <div class="form-group-item">
-            <label for="task-title-input" class="form-label-text">Task Title <span class="req">*</span></label>
-            <input type="text" id="task-title-input" class="text-input-field" placeholder="e.g. Design responsive UI components" required>
-            <div class="field-error-msg" id="task-title-error"></div>
+      <form id="form-save-task">
+        <input type="hidden" id="input-task-id">
+        <div class="modal-body-pad">
+          <div class="form-field-group">
+            <label class="form-label-bold" for="input-task-title">Task Title <span style="color:#FA896B;">*</span></label>
+            <input type="text" id="input-task-title" class="form-control-input" style="padding-left:0.85rem;" placeholder="e.g. Design responsive UI components" required>
           </div>
 
-          <div class="form-group-item">
-            <label for="task-desc-input" class="form-label-text">Description / Notes</label>
-            <textarea id="task-desc-input" class="textarea-input-field" rows="3" placeholder="Provide extra milestone details or instructions..."></textarea>
+          <div class="form-field-group">
+            <label class="form-label-bold" for="input-task-desc">Description & Notes</label>
+            <textarea id="input-task-desc" class="form-control-input" style="padding-left:0.85rem;" rows="3" placeholder="Provide extra details, steps or reference links..."></textarea>
           </div>
 
-          <div class="form-grid-two">
-            <div class="form-group-item">
-              <label for="task-category-input" class="form-label-text">Category</label>
-              <input type="text" id="task-category-input" class="text-input-field" placeholder="Design, Dev, QA, etc." list="category-options">
-              <datalist id="category-options">
-                <option value="Design">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div class="form-field-group">
+              <label class="form-label-bold" for="input-task-category">Category</label>
+              <input type="text" id="input-task-category" class="form-control-input" style="padding-left:0.85rem;" placeholder="Development, Design, etc." list="dl-categories">
+              <datalist id="dl-categories">
                 <option value="Development">
+                <option value="Design">
                 <option value="QA">
                 <option value="Internship">
-                <option value="Research">
-                <option value="Marketing">
               </datalist>
             </div>
 
-            <div class="form-group-item">
-              <label for="task-priority-select" class="form-label-text">Priority</label>
-              <select id="task-priority-select" class="select-input-field">
+            <div class="form-field-group">
+              <label class="form-label-bold" for="select-task-priority">Priority</label>
+              <select id="select-task-priority" class="select-dropdown-filter" style="width:100%;height:38px;">
                 <option value="Low">Low</option>
                 <option value="Medium" selected>Medium</option>
                 <option value="High">High</option>
@@ -578,58 +726,60 @@
             </div>
           </div>
 
-          <div class="form-grid-two">
-            <div class="form-group-item">
-              <label for="task-status-select" class="form-label-text">Status</label>
-              <select id="task-status-select" class="select-input-field">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+            <div class="form-field-group">
+              <label class="form-label-bold" for="select-task-status">Status</label>
+              <select id="select-task-status" class="select-dropdown-filter" style="width:100%;height:38px;">
                 <option value="Pending" selected>Pending</option>
                 <option value="In Progress">In Progress</option>
                 <option value="Completed">Completed</option>
               </select>
             </div>
 
-            <div class="form-group-item">
-              <label for="task-due-date-input" class="form-label-text">Due Date</label>
-              <input type="date" id="task-due-date-input" class="text-input-field">
+            <div class="form-field-group">
+              <label class="form-label-bold" for="input-task-due-date">Due Date</label>
+              <input type="date" id="input-task-due-date" class="form-control-input" style="padding-left:0.85rem;height:38px;">
             </div>
           </div>
-
-          <div class="field-error-msg" id="task-form-general-error"></div>
         </div>
 
-        <div class="modal-bottom-bar">
-          <button type="button" class="btn btn-secondary" id="task-modal-cancel-btn">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="task-modal-submit-btn">Save Task</button>
+        <div class="modal-footer-strip">
+          <button type="button" class="btn-hero-secondary" id="btn-cancel-task-modal">Cancel</button>
+          <button type="submit" class="btn-taskflow-primary" id="btn-submit-task-form">Save Task</button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- ====================================================================
-       4. Modal: Delete Confirmation
+       4. DELETE CONFIRMATION MODAL
        ==================================================================== -->
-  <div class="modal-overlay" id="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
-    <div class="modal-dialog-box">
-      <div class="modal-top-bar">
-        <h2 class="modal-heading" id="delete-modal-title">Confirm Deletion</h2>
-        <button type="button" class="modal-close-icon" id="delete-modal-close-btn" aria-label="Close dialog">✕</button>
+  <div class="modal-backdrop-veil" id="modal-delete-confirm">
+    <div class="modal-window-box">
+      <div class="modal-header-strip">
+        <h3 class="modal-title-bold">Confirm Deletion</h3>
+        <button type="button" class="modal-close-cross" id="btn-close-delete-modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
-      <div class="modal-inner-body">
-        <p>Are you sure you want to permanently delete this task?</p>
-        <p style="margin-top: 0.5rem; font-weight: 700; color: var(--color-danger);" id="delete-task-name"></p>
-        <p style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">This action cannot be undone.</p>
+      <div class="modal-body-pad">
+        <p style="font-size:0.95rem;color:#334155;">Are you sure you want to permanently delete this task?</p>
+        <p style="margin-top:0.5rem;font-weight:700;color:#FA896B;font-size:1rem;" id="delete-target-title"></p>
+        <p style="margin-top:0.4rem;font-size:11px;color:#94A3B8;">This action cannot be undone.</p>
       </div>
-      <div class="modal-bottom-bar">
-        <button type="button" class="btn btn-secondary" id="delete-modal-cancel-btn">Cancel</button>
-        <button type="button" class="btn btn-danger" id="delete-modal-confirm-btn">Delete Task</button>
+      <div class="modal-footer-strip">
+        <button type="button" class="btn-hero-secondary" id="btn-cancel-delete">Cancel</button>
+        <button type="button" class="btn-taskflow-primary" id="btn-confirm-delete" style="background:#FA896B;box-shadow:0 4px 12px rgba(250,137,107,0.3);">
+          Delete Task
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Toast Notification Stack -->
-  <div class="toast-stack" id="toast-container" aria-live="polite" aria-atomic="true"></div>
+  <!-- Toast Floating Stack -->
+  <div class="toast-floating-container" id="toast-container" aria-live="polite"></div>
 
-  <!-- Pure ES6 Vanilla JavaScript Modules -->
+  <!-- JavaScript Modules -->
   <script src="js/api.js"></script>
   <script src="js/app.js"></script>
 </body>
