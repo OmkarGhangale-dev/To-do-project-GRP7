@@ -42,18 +42,20 @@ export const AdminOverviewPage: React.FC<AdminOverviewProps> = ({
   return (
     <div className="space-y-6">
       {/* Admin Welcome Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-purple-950 to-slate-900 text-white rounded-2xl border border-slate-800 p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-gradient-to-r from-purple-50 via-indigo-50/70 to-slate-50 dark:from-slate-900 dark:via-purple-950 dark:to-slate-900 text-slate-900 dark:text-white rounded-2xl border border-purple-100 dark:border-slate-800 p-6 shadow-md dark:shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-600/80 text-purple-100 border border-purple-400/40">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-600/80 dark:text-purple-100 dark:border-purple-400/40">
               Admin Console
             </span>
-            <span className="text-xs text-purple-300">Organization Master Control</span>
+            <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">
+              Organization Master Control
+            </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1 text-slate-900 dark:text-white">
             TASKFLOW Enterprise Health
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300 mt-1">
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1">
             Global monitoring for team productivity, user accounts, and system-wide task execution
           </p>
         </div>
@@ -61,7 +63,7 @@ export const AdminOverviewPage: React.FC<AdminOverviewProps> = ({
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => onNavigate('admin-reports')}
-            className="px-3.5 py-2 text-xs font-semibold text-slate-200 bg-slate-800/80 hover:bg-slate-700/80 rounded-xl border border-slate-700 transition-colors"
+            className="px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-700/80 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs transition-colors"
           >
             Export Audit Report
           </button>

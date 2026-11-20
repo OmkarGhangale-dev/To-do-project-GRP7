@@ -142,13 +142,13 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={handleToggleRole}
             className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all flex items-center gap-1.5 ${
               activeRole === 'admin'
-                ? 'bg-[#111C2D] text-white border-slate-700 shadow-xs'
+                ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-[#111C2D] dark:text-white dark:border-slate-700 shadow-xs'
                 : 'bg-[#F4F6FA] text-slate-700 border-[#EEF2F6] dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:bg-slate-200/70'
             }`}
           >
             {activeRole === 'admin' ? (
               <>
-                <ShieldCheck className="w-3.5 h-3.5 text-[#5D87FF]" />
+                <ShieldCheck className="w-3.5 h-3.5 text-purple-600 dark:text-[#5D87FF]" />
                 <span className="hidden md:inline">Admin Mode</span>
               </>
             ) : (

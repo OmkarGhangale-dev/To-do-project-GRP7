@@ -84,13 +84,13 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
       {/* Admin Sidebar Container */}
       <aside
-        className={`fixed md:sticky top-0 left-0 z-40 h-screen bg-[#111C2D] text-slate-100 border-r border-slate-800 flex flex-col justify-between transition-all duration-300 ease-in-out ${
+        className={`fixed md:sticky top-0 left-0 z-40 h-screen bg-white dark:bg-[#111C2D] text-slate-800 dark:text-slate-100 border-r border-[#EEF2F6] dark:border-slate-800 flex flex-col justify-between transition-all duration-300 ease-in-out shadow-xs ${
           isCollapsed ? 'md:w-20' : 'md:w-64'
         } ${isOpenMobile ? 'w-64 translate-x-0' : '-translate-x-full md:translate-x-0'}`}
       >
         <div className="overflow-y-auto overflow-x-hidden flex-1">
           {/* Top: Brand & Admin Badge */}
-          <div className="h-20 px-6 flex items-center justify-between border-b border-slate-800/80">
+          <div className="h-20 px-6 flex items-center justify-between border-b border-[#EEF2F6] dark:border-slate-800/80">
             <div
               onClick={() => handleItemClick('admin-overview')}
               className="flex items-center gap-3 cursor-pointer select-none"
@@ -103,14 +103,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               {!isCollapsed && (
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1.5">
-                    <span className="font-extrabold text-lg tracking-tight text-white">
+                    <span className="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white">
                       TASKFLOW
                     </span>
                     <span className="text-[10px] font-bold bg-[#5D87FF] text-white px-1.5 py-0.2 rounded">
                       ADMIN
                     </span>
                   </div>
-                  <span className="text-[10px] font-semibold text-slate-400">
+                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
                     Enterprise Console
                   </span>
                 </div>
@@ -121,7 +121,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="hidden md:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="hidden md:flex p-1.5 rounded-lg text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               {isCollapsed ? (
@@ -137,7 +137,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             {navGroups.map((group) => (
               <div key={group.title} className="space-y-1">
                 {!isCollapsed && (
-                  <div className="px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  <div className="px-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                     {group.title}
                   </div>
                 )}
@@ -155,12 +155,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                         isActive
                           ? 'bg-[#5D87FF] text-white shadow-md shadow-[#5D87FF]/30'
-                          : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white'
                       } ${isCollapsed ? 'justify-center px-0' : ''}`}
                     >
                       <Icon
                         className={`w-5 h-5 shrink-0 ${
-                          isActive ? 'text-white' : 'text-slate-400'
+                          isActive ? 'text-white' : 'text-slate-400 dark:text-slate-400'
                         }`}
                       />
                       {!isCollapsed && <span className="truncate">{item.label}</span>}
@@ -173,12 +173,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </div>
 
         {/* Bottom Section: Switch to User & Logout */}
-        <div className="p-4 border-t border-slate-800 space-y-2">
+        <div className="p-4 border-t border-[#EEF2F6] dark:border-slate-800 space-y-2">
           <button
             type="button"
             onClick={handleSwitchToUser}
             title={isCollapsed ? 'Switch to User View' : undefined}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-200 hover:bg-slate-800 hover:text-white transition-colors ${
+            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors ${
               isCollapsed ? 'justify-center px-0' : ''
             }`}
           >
@@ -190,7 +190,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             type="button"
             onClick={logout}
             title={isCollapsed ? 'Sign Out' : undefined}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-rose-400 hover:bg-rose-950/40 transition-colors ${
+            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors ${
               isCollapsed ? 'justify-center px-0' : ''
             }`}
           >
