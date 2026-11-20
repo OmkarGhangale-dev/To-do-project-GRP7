@@ -1,9 +1,15 @@
 /**
- * TaskFlow Application Controller
- * Group 7 - Frontend Development (Rashika Jagdev Prajapati)
- *
- * Implements Vanilla JavaScript (ES6+) state management, DOM manipulation,
- * role-based routing (User vs Admin), and task CRUD operations.
+ * TaskFlow Application Controller — Group 7 Official Frontend
+ * Pure Vanilla JavaScript (ES6+) Implementation
+ * 
+ * Features:
+ *  - Collapsible Sidebar Navigation & Mobile Drawer
+ *  - Reactive SVG Analytics Charts (User & Admin Dashboards)
+ *  - Complete Task CRUD & Quick Completion Toggles
+ *  - Real-time KPI Calculation (Total, In Progress, Completed, Overdue)
+ *  - Instant Multi-Field Search, Priority Filter & Sorting
+ *  - Role-guarded Admin Console (Users Table & System Tasks)
+ *  - Pluggable Mock/Live API Client Integration
  */
 
 // ============================================================================
@@ -28,7 +34,7 @@ const state = {
 };
 
 // ============================================================================
-// Utility Functions
+// Utilities
 // ============================================================================
 function escapeHtml(str) {
   if (typeof str !== 'string') return '';
@@ -55,9 +61,15 @@ function isOverdue(dateString, status) {
   if (!dateString || status === 'Completed') return false;
   const due = new Date(dateString);
   const now = new Date();
-  // Clear times to compare dates accurately
   due.setHours(23, 59, 59, 999);
   return due < now;
+}
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
 }
 
 function showToast(message, type = 'info') {
@@ -72,14 +84,14 @@ function showToast(message, type = 'info') {
   };
 
   const toast = document.createElement('div');
-  toast.className = `toast toast-${type}`;
+  toast.className = `toast-item toast-${type}`;
   toast.innerHTML = `
     <span>${icons[type] || 'ℹ️'}</span>
-    <span class="toast-message">${escapeHtml(message)}</span>
-    <button type="button" class="toast-close" aria-label="Dismiss">✕</button>
+    <span class="toast-item-text">${escapeHtml(message)}</span>
+    <button type="button" class="toast-item-close" aria-label="Dismiss">✕</button>
   `;
 
-  toast.querySelector('.toast-close').addEventListener('click', () => {
+  toast.querySelector('.toast-item-close').addEventListener('click', () => {
     toast.remove();
   });
 
@@ -88,57 +100,236 @@ function showToast(message, type = 'info') {
   setTimeout(() => {
     if (toast.parentNode) {
       toast.style.opacity = '0';
-      toast.style.transition = 'opacity 0.3s ease';
-      setTimeout(() => toast.remove(), 300);
+      toast.style.transform = 'translateX(20px)';
+      toast.style.transition = 'all 0.25s ease';
+      setTimeout(() => toast.remove(), 250);
     }
   }, 4000);
 }
 
 // ============================================================================
-// View Navigation & Router
+// SVG Chart Rendering Engine (Zero External Dependencies)
+// ============================================================================
+function renderDonutChart(containerId, legendId, data) {
+  const container = document.getElementById(containerId);
+  const legend = document.getElementById(legendId);
+  if (!container) return;
+
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+
+  if (total === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+        <span>No task data available</span>
+      </div>
+    `;
+    if (legend) legend.innerHTML = '';
+    return;
+  }
+
+  const size = 180;
+  const strokeWidth = 26;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  let accumulatedAngle = -90; // Start at top
+
+  let pathsSvg = '';
+  data.forEach((item) => {
+    if (item.value === 0) return;
+    const ratio = item.value / total;
+    const strokeDasharray = `${ratio * circumference} ${circumference}`;
+    const strokeDashoffset = -((accumulatedAngle + 90) / 360) * circumference;
+
+    pathsSvg += `
+      <circle
+        cx="${size / 2}"
+        cy="${size / 2}"
+        r="${radius}"
+        fill="transparent"
+        stroke="${item.color}"
+        stroke-width="${strokeWidth}"
+        stroke-dasharray="${strokeDasharray}"
+        stroke-dashoffset="${strokeDashoffset}"
+        style="transition: stroke-dasharray 0.5s ease;"
+      />
+    `;
+    accumulatedAngle += ratio * 360;
+  });
+
+  const completedItem = data.find((d) => d.label === 'Completed');
+  const percentComplete = completedItem ? Math.round((completedItem.value / total) * 100) : 0;
+
+  container.innerHTML = `
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle cx="${size / 2}" cy="${size / 2}" r="${radius}" fill="transparent" stroke="#f1f5f9" stroke-width="${strokeWidth}" />
+      ${pathsSvg}
+      <text x="${size / 2}" y="${size / 2 - 2}" text-anchor="middle" dominant-baseline="central" font-size="24" font-weight="800" fill="#2a3547">
+        ${percentComplete}%
+      </text>
+      <text x="${size / 2}" y="${size / 2 + 20}" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="600" fill="#7c8fac">
+        Done
+      </text>
+    </svg>
+  `;
+
+  if (legend) {
+    legend.innerHTML = data
+      .map(
+        (item) => `
+        <span class="legend-item">
+          <span class="legend-dot" style="background:${item.color};"></span>
+          ${escapeHtml(item.label)}: <strong>${item.value}</strong>
+        </span>
+      `
+      )
+      .join('');
+  }
+}
+
+function renderPriorityBarChart(containerId, priorityCounts) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const items = [
+    { label: 'High', count: priorityCounts.High || 0, color: '#fa896b' },
+    { label: 'Medium', count: priorityCounts.Medium || 0, color: '#5d87ff' },
+    { label: 'Low', count: priorityCounts.Low || 0, color: '#13deb9' },
+  ];
+
+  const maxVal = Math.max(...items.map((i) => i.count), 4);
+  const chartHeight = 160;
+  const barWidth = 44;
+
+  const barsSvg = items
+    .map((item, index) => {
+      const height = (item.count / maxVal) * chartHeight;
+      const y = chartHeight - height + 20;
+      const x = 45 + index * 105;
+
+      return `
+      <g>
+        <!-- Background guide bar -->
+        <rect x="${x}" y="20" width="${barWidth}" height="${chartHeight}" rx="8" fill="#f8fafc" />
+        <!-- Actual colored bar -->
+        <rect x="${x}" y="${y}" width="${barWidth}" height="${height}" rx="8" fill="${item.color}" style="transition: height 0.5s ease;">
+          <title>${item.label}: ${item.count} tasks</title>
+        </rect>
+        <!-- Value text above bar -->
+        <text x="${x + barWidth / 2}" y="${y - 8}" text-anchor="middle" font-size="13" font-weight="800" fill="#2a3547">
+          ${item.count}
+        </text>
+        <!-- Category label below bar -->
+        <text x="${x + barWidth / 2}" y="${chartHeight + 40}" text-anchor="middle" font-size="12" font-weight="700" fill="#7c8fac">
+          ${item.label}
+        </text>
+      </g>
+    `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <svg width="100%" height="220" viewBox="0 0 350 220" style="overflow: visible;">
+      ${barsSvg}
+    </svg>
+  `;
+}
+
+function renderAdminUserWorkloadChart(containerId, users) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  if (!users || users.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;">No user workload data.</p>';
+    return;
+  }
+
+  const displayUsers = users.slice(0, 5); // top 5 users
+  const maxTasks = Math.max(...displayUsers.map((u) => u.tasksCount || 0), 4);
+  const chartHeight = 150;
+  const colWidth = 26;
+
+  const groupsSvg = displayUsers
+    .map((u, index) => {
+      const totalH = ((u.tasksCount || 0) / maxTasks) * chartHeight;
+      const compH = ((u.completedCount || 0) / maxTasks) * chartHeight;
+      const baseX = 30 + index * 65;
+      const yTotal = chartHeight - totalH + 20;
+      const yComp = chartHeight - compH + 20;
+      const firstName = u.name.split(' ')[0];
+
+      return `
+      <g>
+        <!-- Total Tasks Bar -->
+        <rect x="${baseX}" y="${yTotal}" width="${colWidth / 2}" height="${totalH}" rx="3" fill="#5d87ff">
+          <title>${u.name} (Total: ${u.tasksCount})</title>
+        </rect>
+        <!-- Completed Tasks Bar -->
+        <rect x="${baseX + colWidth / 2 + 2}" y="${yComp}" width="${colWidth / 2}" height="${compH}" rx="3" fill="#13deb9">
+          <title>${u.name} (Completed: ${u.completedCount})</title>
+        </rect>
+        <!-- Name label below -->
+        <text x="${baseX + colWidth / 2}" y="${chartHeight + 36}" text-anchor="middle" font-size="10" font-weight="700" fill="#7c8fac">
+          ${escapeHtml(firstName)}
+        </text>
+      </g>
+    `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <svg width="100%" height="210" viewBox="0 0 360 210">
+      ${groupsSvg}
+    </svg>
+  `;
+}
+
+// ============================================================================
+// View Navigation & App State Sync
 // ============================================================================
 function updateModeBadge() {
-  const badge = document.getElementById('mode-toggle-btn');
-  const label = document.getElementById('mode-label');
-  if (!badge || !label) return;
+  const btn = document.getElementById('mode-toggle-btn');
+  const label = document.getElementById('mode-pill-label');
+  if (!btn || !label) return;
 
   if (api.isMockMode()) {
-    badge.className = 'mode-badge';
+    btn.className = 'mode-pill';
     label.textContent = '⚡ Demo Mock Mode';
-    badge.title = 'Running on Mock Adapter. Click to switch to Krishna\'s Live Express Backend.';
+    btn.title = 'Running on LocalStorage Mock Adapter. Click to switch to Krishna\'s Live Express Backend.';
   } else {
-    badge.className = 'mode-badge api-mode';
+    btn.className = 'mode-pill api-mode';
     label.textContent = '🔗 Backend API Mode';
-    badge.title = 'Targeting Live API (localhost:5000). Click to switch to Demo Mock Mode.';
+    btn.title = 'Targeting Live API (localhost:5000). Click to switch to Demo Mock Mode.';
   }
 }
 
 function updateNavigation(user) {
-  const navCenter = document.getElementById('nav-center');
-  const navAdminLink = document.getElementById('nav-admin-link');
-  const userProfileBadge = document.getElementById('user-profile-badge');
-  const userDisplayName = document.getElementById('user-display-name');
-  const userDisplayRole = document.getElementById('user-display-role');
-  const userAvatar = document.getElementById('user-avatar');
-  const logoutBtn = document.getElementById('logout-btn');
+  const sidebar = document.getElementById('app-sidebar');
+  const userFooter = document.getElementById('sidebar-user-footer');
+  const adminSection = document.getElementById('sidebar-admin-section');
+  const logoutBtn = document.getElementById('header-logout-btn');
+
+  const nameEl = document.getElementById('sidebar-user-name');
+  const roleEl = document.getElementById('sidebar-user-role');
+  const avatarCharEl = document.getElementById('sidebar-avatar-char');
 
   if (user) {
-    navCenter.style.display = 'flex';
-    userProfileBadge.style.display = 'flex';
+    sidebar.style.display = 'flex';
+    userFooter.style.display = 'flex';
     logoutBtn.style.display = 'inline-flex';
 
-    userDisplayName.textContent = user.name;
-    userDisplayRole.textContent = user.role.toUpperCase();
-    userAvatar.textContent = (user.name || 'U').charAt(0).toUpperCase();
+    nameEl.textContent = user.name;
+    roleEl.textContent = (user.role || 'USER').toUpperCase();
+    avatarCharEl.textContent = (user.name || 'U').charAt(0).toUpperCase();
 
     if (user.role === 'admin') {
-      navAdminLink.style.display = 'inline-flex';
+      adminSection.style.display = 'block';
     } else {
-      navAdminLink.style.display = 'none';
+      adminSection.style.display = 'none';
     }
   } else {
-    navCenter.style.display = 'none';
-    userProfileBadge.style.display = 'none';
+    sidebar.style.display = 'none';
+    userFooter.style.display = 'none';
+    adminSection.style.display = 'none';
     logoutBtn.style.display = 'none';
   }
 }
@@ -153,18 +344,19 @@ function navigateTo(viewId) {
   const targetView = document.getElementById(viewId);
   if (targetView) targetView.classList.add('active');
 
-  // Update nav active link styles
-  const navTasksLink = document.getElementById('nav-tasks-link');
-  const navAdminLink = document.getElementById('nav-admin-link');
-  if (navTasksLink && navAdminLink) {
-    if (viewId === 'admin-dashboard-view') {
-      navTasksLink.classList.remove('active');
-      navAdminLink.classList.add('active');
-    } else if (viewId === 'user-dashboard-view') {
-      navTasksLink.classList.add('active');
-      navAdminLink.classList.remove('active');
+  // Update sidebar active buttons
+  const navBtns = document.querySelectorAll('.nav-item-btn');
+  navBtns.forEach((btn) => {
+    const target = btn.getAttribute('data-target');
+    if (target === viewId) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
     }
-  }
+  });
+
+  // Close mobile sidebar if open
+  document.getElementById('app-sidebar').classList.remove('mobile-open');
 }
 
 // ============================================================================
@@ -173,29 +365,29 @@ function navigateTo(viewId) {
 function initAuth() {
   const tabLoginBtn = document.getElementById('tab-login-btn');
   const tabRegisterBtn = document.getElementById('tab-register-btn');
-  const loginFormContainer = document.getElementById('login-form-container');
-  const registerFormContainer = document.getElementById('register-form-container');
+  const loginContainer = document.getElementById('login-form-container');
+  const registerContainer = document.getElementById('register-form-container');
 
   const loginForm = document.getElementById('login-form');
   const registerForm = document.getElementById('register-form');
 
   const quickUserBtn = document.getElementById('quick-demo-user-btn');
   const quickAdminBtn = document.getElementById('quick-demo-admin-btn');
-  const logoutBtn = document.getElementById('logout-btn');
+  const logoutBtn = document.getElementById('header-logout-btn');
 
-  // Tab switching
+  // Tabs
   tabLoginBtn.addEventListener('click', () => {
     tabLoginBtn.classList.add('active');
     tabRegisterBtn.classList.remove('active');
-    loginFormContainer.style.display = 'block';
-    registerFormContainer.style.display = 'none';
+    loginContainer.style.display = 'block';
+    registerContainer.style.display = 'none';
   });
 
   tabRegisterBtn.addEventListener('click', () => {
     tabRegisterBtn.classList.add('active');
     tabLoginBtn.classList.remove('active');
-    registerFormContainer.style.display = 'block';
-    loginFormContainer.style.display = 'none';
+    registerContainer.style.display = 'block';
+    loginContainer.style.display = 'none';
   });
 
   // Quick Demo Buttons
@@ -222,7 +414,7 @@ function initAuth() {
     errorEl.textContent = '';
 
     if (!email || !password) {
-      errorEl.textContent = 'Please enter both email and password.';
+      errorEl.textContent = 'Please enter both your email address and password.';
       return;
     }
 
@@ -243,7 +435,7 @@ function initAuth() {
         loadUserDashboard();
       }
     } catch (err) {
-      errorEl.textContent = err.message || 'Login failed. Please check credentials.';
+      errorEl.textContent = err.message || 'Login failed. Please verify credentials.';
       showToast(err.message, 'error');
     } finally {
       submitBtn.disabled = false;
@@ -264,7 +456,7 @@ function initAuth() {
     errorEl.textContent = '';
 
     if (!name) {
-      errorEl.textContent = 'Please enter your full name.';
+      errorEl.textContent = 'Please provide your full name.';
       return;
     }
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -320,51 +512,80 @@ async function loadUserDashboard() {
   if (!user) return;
 
   document.getElementById('dash-user-name').textContent = user.name;
+  document.getElementById('hero-greeting-text').textContent = getGreeting();
+
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'short',
     day: 'numeric',
+    year: 'numeric',
   });
-  document.getElementById('dash-date-str').textContent = `Today is ${today} • Group 7 TaskFlow Dashboard`;
+  document.getElementById('hero-date-text').textContent = `📅 Today is ${today}`;
 
   await fetchAndRenderTasks();
 }
 
 async function fetchAndRenderTasks() {
-  const container = document.getElementById('task-list-container');
+  const container = document.getElementById('task-items-container');
   container.innerHTML = `
-    <div class="state-box">
-      <div class="spinner"></div>
-      <p class="state-desc">Loading your tasks...</p>
+    <div class="empty-state-card">
+      <div class="spinner-ring"></div>
+      <p class="empty-state-desc">Loading your milestones...</p>
     </div>
   `;
 
   try {
     const tasks = await api.getTasks();
     state.tasks = tasks;
-    updateTaskStatistics();
+    updateTaskStatisticsAndCharts();
     renderFilteredTasks();
   } catch (err) {
     container.innerHTML = `
-      <div class="state-box">
-        <div class="state-icon">⚠️</div>
-        <div class="state-title">Error Loading Tasks</div>
-        <div class="state-desc">${escapeHtml(err.message)}</div>
+      <div class="empty-state-card">
+        <div class="empty-state-icon">⚠️</div>
+        <div class="empty-state-title">Error Loading Tasks</div>
+        <div class="empty-state-desc">${escapeHtml(err.message)}</div>
         <button class="btn btn-primary btn-sm" onclick="fetchAndRenderTasks()">Retry</button>
       </div>
     `;
-    showToast('Failed to fetch tasks.', 'error');
+    showToast('Failed to load tasks.', 'error');
   }
 }
 
-function updateTaskStatistics() {
-  const total = state.tasks.length;
-  const pending = state.tasks.filter((t) => t.status === 'Pending' || t.status === 'In Progress').length;
-  const completed = state.tasks.filter((t) => t.status === 'Completed').length;
+function updateTaskStatisticsAndCharts() {
+  const tasks = state.tasks;
+  const total = tasks.length;
+  const inProgress = tasks.filter((t) => t.status === 'In Progress' || t.status === 'Pending').length;
+  const completed = tasks.filter((t) => t.status === 'Completed').length;
+  const overdue = tasks.filter((t) => isOverdue(t.due_date, t.status)).length;
 
-  document.getElementById('stat-total-tasks').textContent = total;
-  document.getElementById('stat-pending-tasks').textContent = pending;
-  document.getElementById('stat-completed-tasks').textContent = completed;
+  // Update KPI counters
+  document.getElementById('kpi-total-tasks').textContent = total;
+  document.getElementById('kpi-pending-tasks').textContent = inProgress;
+  document.getElementById('kpi-completed-tasks').textContent = completed;
+  document.getElementById('kpi-overdue-tasks').textContent = overdue;
+
+  // Update sidebar pending badge
+  const pendingCount = tasks.filter((t) => t.status !== 'Completed').length;
+  document.getElementById('sidebar-task-count').textContent = pendingCount;
+
+  // Render Chart 1: Status Donut
+  const pendingOnly = tasks.filter((t) => t.status === 'Pending').length;
+  const progressOnly = tasks.filter((t) => t.status === 'In Progress').length;
+
+  renderDonutChart('user-status-donut-chart', 'user-status-donut-legend', [
+    { label: 'Completed', value: completed, color: '#13deb9' },
+    { label: 'In Progress', value: progressOnly, color: '#5d87ff' },
+    { label: 'Pending', value: pendingOnly, color: '#ffae1f' },
+  ]);
+
+  // Render Chart 2: Priority Bar Chart
+  const priorityCounts = {
+    High: tasks.filter((t) => t.priority === 'High').length,
+    Medium: tasks.filter((t) => t.priority === 'Medium').length,
+    Low: tasks.filter((t) => t.priority === 'Low').length,
+  };
+  renderPriorityBarChart('user-priority-bar-chart', priorityCounts);
 }
 
 function getPriorityWeight(p) {
@@ -374,7 +595,7 @@ function getPriorityWeight(p) {
 }
 
 function renderFilteredTasks() {
-  const container = document.getElementById('task-list-container');
+  const container = document.getElementById('task-items-container');
   const countBadge = document.getElementById('task-count-badge');
 
   let filtered = [...state.tasks];
@@ -400,7 +621,7 @@ function renderFilteredTasks() {
     );
   }
 
-  // 4. Sorting
+  // 4. Sort
   if (state.filters.sort === 'due_date_asc') {
     filtered.sort((a, b) => {
       if (!a.due_date) return 1;
@@ -417,14 +638,14 @@ function renderFilteredTasks() {
 
   if (filtered.length === 0) {
     container.innerHTML = `
-      <div class="state-box">
-        <div class="state-icon">📋</div>
-        <div class="state-title">No tasks found</div>
-        <div class="state-desc">
+      <div class="empty-state-card">
+        <div class="empty-state-icon">📋</div>
+        <div class="empty-state-title">No tasks found</div>
+        <div class="empty-state-desc">
           ${
             state.tasks.length === 0
-              ? 'You have not created any tasks yet. Click "+ New Task" above to get started!'
-              : 'No tasks match your active filters or search keyword. Try adjusting them.'
+              ? 'You have not created any tasks yet. Click "+ Create New Task" above to kick off your sprint!'
+              : 'No tasks match your active filter criteria. Try clearing search or selecting "All".'
           }
         </div>
       </div>
@@ -438,38 +659,36 @@ function renderFilteredTasks() {
       const overdue = isOverdue(task.due_date, task.status);
 
       return `
-        <article class="task-card ${isDone ? 'is-completed' : ''} priority-${escapeHtml(task.priority)}" data-task-id="${task.id}">
-          <div class="task-main">
-            <!-- Quick Complete Toggle -->
-            <button type="button" class="task-check-btn" onclick="toggleTaskStatus(${task.id})" title="${isDone ? 'Mark as Pending' : 'Mark as Completed'}" aria-label="Toggle task status">
+        <article class="task-card-item ${isDone ? 'is-completed' : ''} prio-${escapeHtml(task.priority)}" data-task-id="${task.id}">
+          <div class="task-left-section">
+            <button type="button" class="task-checkbox-btn" onclick="toggleTaskStatus(${task.id})" title="${isDone ? 'Reopen task' : 'Mark as Completed'}" aria-label="Toggle task completion">
               ${isDone ? '✓' : ''}
             </button>
 
-            <div class="task-content">
-              <div class="task-title-row">
-                <span class="task-title">${escapeHtml(task.title)}</span>
-                <span class="badge badge-priority-${escapeHtml(task.priority)}">${escapeHtml(task.priority)}</span>
-                <span class="badge badge-status-${escapeHtml(task.status.replace(/\s+/g, ''))}">${escapeHtml(task.status)}</span>
-                ${task.category ? `<span class="badge badge-category">🏷️ ${escapeHtml(task.category)}</span>` : ''}
+            <div class="task-content-section">
+              <div class="task-heading-row">
+                <span class="task-title-text">${escapeHtml(task.title)}</span>
+                <span class="badge-pill badge-prio-${escapeHtml(task.priority)}">${escapeHtml(task.priority)}</span>
+                <span class="badge-pill badge-status-${escapeHtml(task.status.replace(/\s+/g, ''))}">${escapeHtml(task.status)}</span>
+                ${task.category ? `<span class="badge-pill badge-tag-category">🏷️ ${escapeHtml(task.category)}</span>` : ''}
               </div>
 
-              ${task.description ? `<p class="task-desc">${escapeHtml(task.description)}</p>` : ''}
+              ${task.description ? `<p class="task-desc-text">${escapeHtml(task.description)}</p>` : ''}
 
-              <div class="task-meta">
-                <span class="meta-item ${overdue ? 'overdue' : ''}">
+              <div class="task-meta-row">
+                <span class="meta-chip ${overdue ? 'overdue-alert' : ''}">
                   📅 ${escapeHtml(formatDate(task.due_date))} ${overdue ? '(Overdue!)' : ''}
                 </span>
-                <span class="meta-item">🕒 Created ${formatDate(task.created_at)}</span>
+                <span class="meta-chip">🕒 Created ${formatDate(task.created_at)}</span>
               </div>
             </div>
           </div>
 
-          <!-- Action Buttons -->
-          <div class="task-actions">
-            <button type="button" class="btn btn-secondary btn-sm" onclick="openEditTaskModal(${task.id})" title="Edit Task">
+          <div class="task-right-actions">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openEditTaskModal(${task.id})" title="Edit Task Details">
               ✏️ Edit
             </button>
-            <button type="button" class="btn btn-secondary btn-sm btn-icon-only" onclick="openDeleteModal(${task.id})" title="Delete Task" aria-label="Delete Task">
+            <button type="button" class="btn btn-secondary btn-sm btn-icon" onclick="openDeleteModal(${task.id})" title="Delete Task" aria-label="Delete Task">
               🗑️
             </button>
           </div>
@@ -489,7 +708,7 @@ window.toggleTaskStatus = async function (taskId) {
   try {
     await api.updateTask(taskId, { status: newStatus });
     task.status = newStatus;
-    updateTaskStatistics();
+    updateTaskStatisticsAndCharts();
     renderFilteredTasks();
     showToast(`Task marked as ${newStatus}!`, 'success');
   } catch (err) {
@@ -512,7 +731,7 @@ function initModals() {
   const deleteCancelBtn = document.getElementById('delete-modal-cancel-btn');
   const deleteConfirmBtn = document.getElementById('delete-modal-confirm-btn');
 
-  // Open Create
+  // Open Create Modal
   openCreateBtn.addEventListener('click', () => {
     document.getElementById('task-modal-title').textContent = 'Create New Task';
     document.getElementById('task-id-input').value = '';
@@ -524,12 +743,10 @@ function initModals() {
     taskModal.classList.add('active');
   });
 
-  // Close task modal
   const closeTaskModal = () => taskModal.classList.remove('active');
   taskModalCloseBtn.addEventListener('click', closeTaskModal);
   taskModalCancelBtn.addEventListener('click', closeTaskModal);
 
-  // Close delete modal
   const closeDeleteModal = () => {
     deleteModal.classList.remove('active');
     state.pendingDeleteTaskId = null;
@@ -537,7 +754,7 @@ function initModals() {
   deleteCloseBtn.addEventListener('click', closeDeleteModal);
   deleteCancelBtn.addEventListener('click', closeDeleteModal);
 
-  // Submit Task Form (Create or Edit)
+  // Submit Task Form
   taskForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = document.getElementById('task-id-input').value;
@@ -567,20 +784,18 @@ function initModals() {
       const payload = { title, description, category, priority, status, due_date };
 
       if (id) {
-        // Edit existing
         const updated = await api.updateTask(id, payload);
         const idx = state.tasks.findIndex((t) => t.id === Number(id));
         if (idx !== -1) state.tasks[idx] = updated;
         showToast('Task updated successfully!', 'success');
       } else {
-        // Create new
         const created = await api.createTask(payload);
         state.tasks.unshift(created);
         showToast('Task created successfully!', 'success');
       }
 
       closeTaskModal();
-      updateTaskStatistics();
+      updateTaskStatisticsAndCharts();
       renderFilteredTasks();
     } catch (err) {
       generalError.textContent = err.message || 'Failed to save task.';
@@ -603,7 +818,7 @@ function initModals() {
       state.tasks = state.tasks.filter((t) => t.id !== Number(state.pendingDeleteTaskId));
       showToast('Task deleted successfully.', 'info');
       closeDeleteModal();
-      updateTaskStatistics();
+      updateTaskStatisticsAndCharts();
       renderFilteredTasks();
     } catch (err) {
       showToast(err.message || 'Failed to delete task.', 'error');
@@ -614,7 +829,6 @@ function initModals() {
   });
 }
 
-// Global modal helpers
 window.openEditTaskModal = function (taskId) {
   const task = state.tasks.find((t) => t.id === Number(taskId));
   if (!task) return;
@@ -661,24 +875,33 @@ async function loadAdminDashboard() {
     state.admin.users = users;
     state.admin.tasks = tasks;
 
-    renderAdminStats(stats);
-    renderAdminUsers(users);
-    renderAdminTasks(tasks);
+    renderAdminStatsAndCharts(stats, users, tasks);
+    renderAdminUsersTable(users);
+    renderAdminTasksTable(tasks);
   } catch (err) {
-    showToast(err.message || 'Failed to fetch admin data.', 'error');
+    showToast(err.message || 'Failed to fetch admin platform data.', 'error');
   } finally {
     refreshBtn.disabled = false;
   }
 }
 
-function renderAdminStats(stats) {
+function renderAdminStatsAndCharts(stats, users, tasks) {
   document.getElementById('admin-stat-users').textContent = stats.totalUsers || 0;
   document.getElementById('admin-stat-tasks').textContent = stats.totalTasks || 0;
   document.getElementById('admin-stat-pending').textContent = stats.pendingTasks || 0;
   document.getElementById('admin-stat-completed').textContent = stats.completedTasks || 0;
+
+  // Admin Chart 1: Status Donut
+  renderDonutChart('admin-status-donut-chart', 'admin-status-donut-legend', [
+    { label: 'Completed', value: stats.completedTasks || 0, color: '#13deb9' },
+    { label: 'Pending', value: stats.pendingTasks || 0, color: '#ffae1f' },
+  ]);
+
+  // Admin Chart 2: User Workload
+  renderAdminUserWorkloadChart('admin-user-bar-chart', users);
 }
 
-function renderAdminUsers(users) {
+function renderAdminUsersTable(users) {
   const tbody = document.getElementById('admin-users-tbody');
   if (!users || users.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No users registered yet.</td></tr>';
@@ -690,11 +913,18 @@ function renderAdminUsers(users) {
       (u) => `
       <tr>
         <td><strong>#${u.id}</strong></td>
-        <td>${escapeHtml(u.name)}</td>
+        <td>
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <span class="user-avatar-circle" style="width:28px;height:28px;font-size:0.75rem;">
+              ${escapeHtml(u.name.charAt(0).toUpperCase())}
+            </span>
+            <span>${escapeHtml(u.name)}</span>
+          </div>
+        </td>
         <td>${escapeHtml(u.email)}</td>
-        <td><span class="badge ${u.role === 'admin' ? 'badge-priority-High' : 'badge-category'}">${escapeHtml(u.role.toUpperCase())}</span></td>
-        <td>${u.tasksCount || 0}</td>
-        <td>${u.completedCount || 0}</td>
+        <td><span class="badge-pill ${u.role === 'admin' ? 'badge-prio-High' : 'badge-tag-category'}">${escapeHtml(u.role.toUpperCase())}</span></td>
+        <td><strong>${u.tasksCount || 0}</strong></td>
+        <td><span style="color:var(--color-success);font-weight:700;">${u.completedCount || 0}</span></td>
         <td>${formatDate(u.created_at)}</td>
       </tr>
     `
@@ -702,7 +932,7 @@ function renderAdminUsers(users) {
     .join('');
 }
 
-function renderAdminTasks(tasks) {
+function renderAdminTasksTable(tasks) {
   const tbody = document.getElementById('admin-tasks-tbody');
   if (!tasks || tasks.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No system tasks created yet.</td></tr>';
@@ -714,11 +944,11 @@ function renderAdminTasks(tasks) {
       (t) => `
       <tr>
         <td><strong>#${t.id}</strong></td>
-        <td>${escapeHtml(t.title)}</td>
+        <td><strong>${escapeHtml(t.title)}</strong></td>
         <td>👤 ${escapeHtml(t.owner_name || 'User ' + t.user_id)}</td>
-        <td>${t.category ? `<span class="badge badge-category">${escapeHtml(t.category)}</span>` : '—'}</td>
-        <td><span class="badge badge-priority-${escapeHtml(t.priority)}">${escapeHtml(t.priority)}</span></td>
-        <td><span class="badge badge-status-${escapeHtml(t.status.replace(/\s+/g, ''))}">${escapeHtml(t.status)}</span></td>
+        <td>${t.category ? `<span class="badge-pill badge-tag-category">${escapeHtml(t.category)}</span>` : '—'}</td>
+        <td><span class="badge-pill badge-prio-${escapeHtml(t.priority)}">${escapeHtml(t.priority)}</span></td>
+        <td><span class="badge-pill badge-status-${escapeHtml(t.status.replace(/\s+/g, ''))}">${escapeHtml(t.status)}</span></td>
         <td>${formatDate(t.due_date)}</td>
       </tr>
     `
@@ -749,16 +979,77 @@ function initAdminControls() {
 
   adminRefreshBtn.addEventListener('click', () => {
     loadAdminDashboard();
-    showToast('Admin data refreshed.', 'info');
+    showToast('Platform data refreshed.', 'info');
   });
 }
 
 // ============================================================================
-// Filter & Search Toolbar Event Listeners
+// Sidebar, Mobile Drawer & Toolbar Filters
 // ============================================================================
-function initToolbarFilters() {
+function initSidebarAndToolbars() {
+  const sidebar = document.getElementById('app-sidebar');
+  const mobileToggle = document.getElementById('mobile-menu-toggle');
+  const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
+
+  mobileToggle.addEventListener('click', () => {
+    sidebar.classList.toggle('mobile-open');
+  });
+
+  sidebarCloseBtn.addEventListener('click', () => {
+    sidebar.classList.remove('mobile-open');
+  });
+
+  // Sidebar navigation buttons
+  document.getElementById('nav-btn-dashboard').addEventListener('click', () => {
+    navigateTo('user-dashboard-view');
+    loadUserDashboard();
+  });
+
+  document.getElementById('nav-btn-tasks').addEventListener('click', () => {
+    navigateTo('user-dashboard-view');
+    const listSection = document.getElementById('task-list-section');
+    if (listSection) listSection.scrollIntoView({ behavior: 'smooth' });
+  });
+
+  document.getElementById('scroll-to-tasks-btn').addEventListener('click', () => {
+    const listSection = document.getElementById('task-list-section');
+    if (listSection) listSection.scrollIntoView({ behavior: 'smooth' });
+  });
+
+  document.getElementById('nav-btn-admin-overview').addEventListener('click', () => {
+    navigateTo('admin-dashboard-view');
+    loadAdminDashboard();
+  });
+
+  document.getElementById('nav-btn-admin-users').addEventListener('click', () => {
+    navigateTo('admin-dashboard-view');
+    document.getElementById('admin-tab-users-btn').click();
+    loadAdminDashboard();
+  });
+
+  document.getElementById('nav-btn-admin-tasks').addEventListener('click', () => {
+    navigateTo('admin-dashboard-view');
+    document.getElementById('admin-tab-tasks-btn').click();
+    loadAdminDashboard();
+  });
+
+  document.getElementById('brand-home-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    if (state.currentUser) {
+      if (state.currentUser.role === 'admin') {
+        navigateTo('admin-dashboard-view');
+        loadAdminDashboard();
+      } else {
+        navigateTo('user-dashboard-view');
+        loadUserDashboard();
+      }
+    } else {
+      navigateTo('auth-view');
+    }
+  });
+
   // Status pills
-  const pills = document.querySelectorAll('.filter-pill');
+  const pills = document.querySelectorAll('.filter-pill-btn');
   pills.forEach((pill) => {
     pill.addEventListener('click', () => {
       pills.forEach((p) => p.classList.remove('active'));
@@ -782,39 +1073,21 @@ function initToolbarFilters() {
     renderFilteredTasks();
   });
 
-  // Search input
-  const searchInput = document.getElementById('task-search-input');
-  searchInput.addEventListener('input', (e) => {
+  // Search inputs (both toolbar and top header search)
+  const taskSearchInput = document.getElementById('task-search-input');
+  taskSearchInput.addEventListener('input', (e) => {
     state.filters.search = e.target.value;
     renderFilteredTasks();
   });
 
-  // Navigation Links
-  document.getElementById('nav-tasks-link').addEventListener('click', (e) => {
-    e.preventDefault();
-    navigateTo('user-dashboard-view');
-    loadUserDashboard();
-  });
-
-  document.getElementById('nav-admin-link').addEventListener('click', (e) => {
-    e.preventDefault();
-    navigateTo('admin-dashboard-view');
-    loadAdminDashboard();
-  });
-
-  document.getElementById('brand-link').addEventListener('click', (e) => {
-    e.preventDefault();
-    if (state.currentUser) {
-      if (state.currentUser.role === 'admin') {
-        navigateTo('admin-dashboard-view');
-        loadAdminDashboard();
-      } else {
-        navigateTo('user-dashboard-view');
-        loadUserDashboard();
-      }
-    } else {
-      navigateTo('auth-view');
+  const topSearchInput = document.getElementById('top-search-input');
+  topSearchInput.addEventListener('input', (e) => {
+    state.filters.search = e.target.value;
+    taskSearchInput.value = e.target.value;
+    if (!document.getElementById('user-dashboard-view').classList.contains('active')) {
+      navigateTo('user-dashboard-view');
     }
+    renderFilteredTasks();
   });
 
   // Mode Switcher Button
@@ -842,9 +1115,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   initAuth();
   initModals();
   initAdminControls();
-  initToolbarFilters();
+  initSidebarAndToolbars();
 
-  // Check persisted session
   const storedUser = api.getCurrentUser();
   if (storedUser) {
     state.currentUser = storedUser;
