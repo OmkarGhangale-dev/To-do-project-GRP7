@@ -31,9 +31,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [activeRole, setActiveRoleState] = useState<UserRole>(() => {
+    if (currentUser?.role !== 'admin') return 'user';
     const savedRole = localStorage.getItem('taskflow_active_role');
     if (savedRole === 'admin' || savedRole === 'user') return savedRole;
-    return currentUser?.role || 'user';
+    return 'admin';
   });
 
   const isAuthenticated = currentUser !== null;
@@ -41,14 +42,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem('taskflow_auth_user', JSON.stringify(currentUser));
+      if (currentUser.role !== 'admin' && activeRole !== 'user') {
+        setActiveRoleState('user');
+      }
     } else {
       localStorage.removeItem('taskflow_auth_user');
+      localStorage.removeItem('taskflow_active_role');
     }
-  }, [currentUser]);
+  }, [currentUser, activeRole]);
 
   useEffect(() => {
-    localStorage.setItem('taskflow_active_role', activeRole);
-  }, [activeRole]);
+    if (currentUser?.role === 'admin') {
+      localStorage.setItem('taskflow_active_role', activeRole);
+    } else {
+      localStorage.setItem('taskflow_active_role', 'user');
+    }
+  }, [activeRole, currentUser]);
 
   const login = (email: string, _password?: string, _remember: boolean = true) => {
     const cleanEmail = email.trim().toLowerCase();
@@ -100,6 +109,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const setActiveRole = (role: UserRole) => {
+    if (currentUser?.role !== 'admin') {
+      setActiveRoleState('user');
+      return;
+    }
     setActiveRoleState(role);
   };
 
@@ -113,7 +126,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const user = INITIAL_USERS.find((u) => u.id === userId);
     if (user) {
       setCurrentUser(user);
-      setActiveRoleState(user.role);
+      setActiveRoleState(user.role === 'admin' ? 'admin' : 'user');
     }
   };
 

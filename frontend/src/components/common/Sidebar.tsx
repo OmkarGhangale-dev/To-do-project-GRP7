@@ -48,7 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpenMobile,
   onCloseMobile,
 }) => {
-  const { logout, activeRole, setActiveRole } = useAuth();
+  const { logout, activeRole, setActiveRole, currentUser } = useAuth();
   const { unreadNotificationCount, tasks } = useTask();
 
   const taskCount = tasks.filter((t) => t.status !== 'Completed').length;
@@ -232,13 +232,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 TASKFLOW SaaS Architecture v2.4
               </p>
 
-              <button
-                type="button"
-                onClick={handleSwitchToAdmin}
-                className="mt-2.5 w-full py-1.5 text-[11px] font-bold text-[#5D87FF] bg-white dark:bg-slate-900 rounded-lg hover:bg-blue-50 transition-colors border border-[#E8F1FC] dark:border-slate-700 flex items-center justify-center gap-1.5 shadow-2xs"
-              >
-                <Shield className="w-3 h-3" /> Switch to Admin View
-              </button>
+              {currentUser?.role === 'admin' && (
+                <button
+                  type="button"
+                  onClick={handleSwitchToAdmin}
+                  className="mt-2.5 w-full py-1.5 text-[11px] font-bold text-[#5D87FF] bg-white dark:bg-slate-900 rounded-lg hover:bg-blue-50 transition-colors border border-[#E8F1FC] dark:border-slate-700 flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                >
+                  <Shield className="w-3 h-3" /> Switch to Admin View
+                </button>
+              )}
             </div>
           )}
 

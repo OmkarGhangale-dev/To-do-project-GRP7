@@ -119,7 +119,7 @@ export const Header: React.FC<HeaderProps> = ({
               {getPageTitle()}
             </h1>
             <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#ECF2FF] text-[#5D87FF] dark:bg-blue-950/60 dark:text-blue-300">
-              {activeRole === 'admin' ? 'Admin Portal' : 'G7 Workspace'}
+              {currentUser?.role === 'admin' && activeRole === 'admin' ? 'Admin Portal' : 'G7 Workspace'}
             </span>
           </div>
         </div>
@@ -136,28 +136,30 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="hidden sm:inline">Add Task</span>
           </button>
 
-          {/* Mode Switcher Button */}
-          <button
-            type="button"
-            onClick={handleToggleRole}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all flex items-center gap-1.5 ${
-              activeRole === 'admin'
-                ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-[#111C2D] dark:text-white dark:border-slate-700 shadow-xs'
-                : 'bg-[#F4F6FA] text-slate-700 border-[#EEF2F6] dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:bg-slate-200/70'
-            }`}
-          >
-            {activeRole === 'admin' ? (
-              <>
-                <ShieldCheck className="w-3.5 h-3.5 text-purple-600 dark:text-[#5D87FF]" />
-                <span className="hidden md:inline">Admin Mode</span>
-              </>
-            ) : (
-              <>
-                <Shield className="w-3.5 h-3.5 text-slate-500" />
-                <span className="hidden md:inline">User Mode</span>
-              </>
-            )}
-          </button>
+          {/* Mode Switcher Button (Only visible to Administrators) */}
+          {currentUser?.role === 'admin' && (
+            <button
+              type="button"
+              onClick={handleToggleRole}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeRole === 'admin'
+                  ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-[#111C2D] dark:text-white dark:border-slate-700 shadow-xs'
+                  : 'bg-[#F4F6FA] text-slate-700 border-[#EEF2F6] dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:bg-slate-200/70'
+              }`}
+            >
+              {activeRole === 'admin' ? (
+                <>
+                  <ShieldCheck className="w-3.5 h-3.5 text-purple-600 dark:text-[#5D87FF]" />
+                  <span className="hidden md:inline">Admin Mode</span>
+                </>
+              ) : (
+                <>
+                  <Shield className="w-3.5 h-3.5 text-slate-500" />
+                  <span className="hidden md:inline">User Mode</span>
+                </>
+              )}
+            </button>
+          )}
 
           {/* Theme Toggle Button */}
           <button
@@ -301,7 +303,11 @@ export const Header: React.FC<HeaderProps> = ({
                   </p>
                   <div className="mt-2 flex items-center gap-1.5">
                     <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#ECF2FF] text-[#5D87FF] dark:bg-blue-950/60 dark:text-blue-300">
-                      {activeRole === 'admin' ? 'Enterprise Admin' : 'Workspace Member'}
+                      {currentUser?.role === 'admin'
+                        ? activeRole === 'admin'
+                          ? 'Enterprise Admin'
+                          : 'Admin (User Preview)'
+                        : 'Workspace Member'}
                     </span>
                   </div>
                 </div>
@@ -318,16 +324,19 @@ export const Header: React.FC<HeaderProps> = ({
                     My Profile & Settings
                   </button>
 
-                  <button
-                    onClick={() => {
-                      setShowProfileMenu(false);
-                      handleToggleRole();
-                    }}
-                    className="w-full px-4 py-2 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-[#F4F6FA] dark:hover:bg-slate-800 flex items-center gap-2"
-                  >
-                    <Shield className="w-4 h-4 text-slate-400" />
-                    Switch to {activeRole === 'admin' ? 'User Dashboard' : 'Admin Console'}
-                  </button>
+                  {/* Switch to Admin/User - Only available for Administrators */}
+                  {currentUser?.role === 'admin' && (
+                    <button
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        handleToggleRole();
+                      }}
+                      className="w-full px-4 py-2 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-[#F4F6FA] dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer"
+                    >
+                      <Shield className="w-4 h-4 text-slate-400" />
+                      Switch to {activeRole === 'admin' ? 'User Dashboard' : 'Admin Console'}
+                    </button>
+                  )}
 
                   <button
                     onClick={() => {

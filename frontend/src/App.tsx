@@ -42,11 +42,20 @@ import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { Task, TaskStatus } from './types';
 
 const MainAppContent: React.FC = () => {
-  const { isAuthenticated, activeRole } = useAuth();
+  const { isAuthenticated, activeRole, currentUser } = useAuth();
   const { deleteTask } = useTask();
+
+  const isEffectiveAdmin = currentUser?.role === 'admin' && activeRole === 'admin';
 
   // Navigation page state
   const [currentPage, setCurrentPage] = useState<string>('overview');
+
+  // Route guard: Non-admin users are strictly redirected from admin routes
+  React.useEffect(() => {
+    if (!isEffectiveAdmin && currentPage.startsWith('admin-')) {
+      setCurrentPage('overview');
+    }
+  }, [isEffectiveAdmin, currentPage]);
   const [authView, setAuthView] = useState<'login' | 'register' | 'forgot'>('login');
 
   // Sidebar responsive state
@@ -115,8 +124,8 @@ const MainAppContent: React.FC = () => {
 
   // Render current active page
   const renderPage = () => {
-    // Admin routes
-    if (activeRole === 'admin') {
+    // Admin routes - strictly guarded for administrators only
+    if (isEffectiveAdmin) {
       switch (currentPage) {
         case 'admin-overview':
           return (
@@ -218,8 +227,8 @@ const MainAppContent: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 flex flex-col transition-colors">
       <div className="flex flex-1">
-        {/* Appropriate Sidebar based on active role */}
-        {activeRole === 'admin' ? (
+        {/* Appropriate Sidebar based on effective admin role */}
+        {isEffectiveAdmin ? (
           <AdminSidebar
             currentPage={currentPage}
             onNavigate={(page) => setCurrentPage(page)}
@@ -230,7 +239,7 @@ const MainAppContent: React.FC = () => {
           />
         ) : (
           <Sidebar
-            currentPage={currentPage}
+            currentPage={currentPage.startsWith('admin-') ? 'overview' : currentPage}
             onNavigate={(page) => setCurrentPage(page)}
             isCollapsed={isSidebarCollapsed}
             onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
