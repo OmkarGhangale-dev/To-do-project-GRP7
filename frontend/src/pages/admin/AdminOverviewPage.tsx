@@ -82,7 +82,7 @@ export const AdminOverviewPage: React.FC<AdminOverviewProps> = ({
         <StatCard
           title="Total Users"
           value={users.length}
-          change="+2 new"
+          change={`${users.filter(u => u.status === 'Active').length} active`}
           changeType="positive"
           icon={Users}
           iconBgColor="bg-purple-50 dark:bg-purple-950/60"
@@ -160,7 +160,7 @@ export const AdminOverviewPage: React.FC<AdminOverviewProps> = ({
               </p>
             </div>
             <span className="text-xs font-bold text-purple-600 dark:text-purple-400">
-              +42% Growth
+              Growth trend
             </span>
           </div>
 
@@ -326,7 +326,7 @@ export const AdminOverviewPage: React.FC<AdminOverviewProps> = ({
                 Administrative Activity Logs
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Real-time security and operational events
+                Security and operational events
               </p>
             </div>
             <button
@@ -358,7 +358,7 @@ export const AdminOverviewPage: React.FC<AdminOverviewProps> = ({
                         minute: '2-digit',
                       })}
                     </span>
-                    <span>IP: {log.ipAddress || '192.168.1.104'}</span>
+                    <span>IP: {log.ipAddress || '—'}</span>
                   </div>
                 </div>
               </div>

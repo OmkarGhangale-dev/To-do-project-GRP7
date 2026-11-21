@@ -40,3 +40,8 @@ temp/
 *.dump
 *.sql.gz
 *.tar
+
+backend/serviceAccountKey.json
+.env
+.env.*
+!.env.example

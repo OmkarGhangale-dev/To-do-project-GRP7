@@ -236,9 +236,9 @@ export const AdminReportsPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <FileSpreadsheet className="w-4 h-4 text-purple-600" />
             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-              {reportType === 'productivity' && 'Live Report Preview • Member Velocity & Productivity (Q4 2026)'}
-              {reportType === 'sla' && 'Live Report Preview • SLA Delivery & Deadline Compliance Audit (Q4 2026)'}
-              {reportType === 'workload' && 'Live Report Preview • Departmental Workload Balance & Capacity (Q4 2026)'}
+              {reportType === 'productivity' && 'Report Preview — Member Productivity'}
+              {reportType === 'sla' && 'Report Preview — SLA Delivery & Deadlines'}
+              {reportType === 'workload' && 'Report Preview — Departmental Workload'}
             </span>
           </div>
           <span className="text-[11px] text-slate-400">

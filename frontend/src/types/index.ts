@@ -28,6 +28,7 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
+  isSuperAdmin?: boolean;
   status: UserAccountStatus;
   avatar: string;
   department: string;

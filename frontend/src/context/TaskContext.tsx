@@ -9,21 +9,18 @@ import {
   NotificationItem,
   ActivityLog,
 } from '../types';
-import {
-  INITIAL_TASKS,
-  INITIAL_USERS,
-  INITIAL_NOTIFICATIONS,
-  INITIAL_ACTIVITY_LOGS,
-} from '../mock/initialData';
+import { api } from '../services/api';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
 
 interface TaskContextType {
   tasks: Task[];
   users: User[];
+  categories: { id: string; name: string }[];
   notifications: NotificationItem[];
   activityLogs: ActivityLog[];
   unreadNotificationCount: number;
+  isLoadingTasks: boolean;
 
   // Filter & Search
   searchQuery: string;
@@ -40,12 +37,16 @@ interface TaskContextType {
   setSortOrder: (order: 'asc' | 'desc') => void;
 
   // Task Operations
-  addTask: (data: Omit<Task, 'id' | 'createdAt' | 'ownerId' | 'ownerName'>) => Task;
-  updateTask: (taskId: string, updates: Partial<Task>) => void;
-  deleteTask: (taskId: string) => void;
-  duplicateTask: (taskId: string) => void;
-  toggleTaskComplete: (taskId: string) => void;
-  moveTaskStatus: (taskId: string, newStatus: TaskStatus) => void;
+  addTask: (data: Omit<Task, 'id' | 'createdAt' | 'ownerId' | 'ownerName'>) => Promise<Task | null>;
+  updateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
+  deleteTask: (taskId: string) => Promise<void>;
+  duplicateTask: (taskId: string) => Promise<void>;
+  toggleTaskComplete: (taskId: string) => Promise<void>;
+  moveTaskStatus: (taskId: string, newStatus: TaskStatus) => Promise<void>;
+  refreshTasks: () => Promise<void>;
+
+  // Category Operations
+  addCategory: (name: string) => Promise<void>;
 
   // Admin User Operations
   addUser: (userData: Omit<User, 'id' | 'registeredDate' | 'totalTasks' | 'completedTasks'>) => void;
@@ -73,402 +74,351 @@ interface TaskContextType {
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
+// Helper to convert Firestore Timestamp / Date to YYYY-MM-DD
+function formatDueDate(raw: any): string {
+  if (!raw) return '';
+  if (typeof raw === 'string') {
+    if (raw.includes('T')) return raw.split('T')[0];
+    return raw;
+  }
+  if (raw._seconds) {
+    const d = new Date(raw._seconds * 1000);
+    return d.toISOString().split('T')[0];
+  }
+  if (raw.seconds) {
+    const d = new Date(raw.seconds * 1000);
+    return d.toISOString().split('T')[0];
+  }
+  if (raw instanceof Date) {
+    return raw.toISOString().split('T')[0];
+  }
+  return '';
+}
+
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, isAuthenticated } = useAuth();
   const { showToast } = useToast();
 
-  // Tasks state
-  const [tasks, setTasks] = useState<Task[]>(() => {
-    const saved = localStorage.getItem('taskflow_tasks_v2');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length >= INITIAL_TASKS.length) {
-          return parsed;
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    return INITIAL_TASKS;
-  });
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [isLoadingTasks, setIsLoadingTasks] = useState<boolean>(false);
 
-  // Users state
-  const [users, setUsers] = useState<User[]>(() => {
-    const saved = localStorage.getItem('taskflow_users_v2');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    return INITIAL_USERS;
-  });
-
-  // Notifications state
-  const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
-    const saved = localStorage.getItem('taskflow_notifications_v2');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    return INITIAL_NOTIFICATIONS;
-  });
-
-  // Activity logs state
-  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>(() => {
-    const saved = localStorage.getItem('taskflow_activity_v2');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    return INITIAL_ACTIVITY_LOGS;
-  });
-
-  // Filters & Search
+  // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedPriority, setSelectedPriority] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
-  const [sortBy, setSortBy] = useState<'dueDate' | 'priority' | 'createdAt' | 'title'>('dueDate');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortBy, setSortBy] = useState<'dueDate' | 'priority' | 'createdAt' | 'title'>('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  // Persistence effects
-  useEffect(() => {
-    localStorage.setItem('taskflow_tasks_v2', JSON.stringify(tasks));
-  }, [tasks]);
+  // Load live tasks and categories from backend
+  const refreshTasks = useCallback(async () => {
+    if (!isAuthenticated) {
+      setTasks([]);
+      setCategories([]);
+      return;
+    }
+
+    setIsLoadingTasks(true);
+    try {
+      const [taskRes, catRes] = await Promise.allSettled([
+        api.getTasks(),
+        api.getCategories(),
+      ]);
+
+      if (catRes.status === 'fulfilled' && catRes.value.success) {
+        const loadedCats = (catRes.value.data || []).map((c: any) => ({
+          id: c.id,
+          name: c.categoryName || c.name || 'General',
+        }));
+        setCategories(loadedCats);
+      }
+
+      if (taskRes.status === 'fulfilled' && taskRes.value.success) {
+        const rawTasks = taskRes.value.data || [];
+        const mappedTasks: Task[] = rawTasks.map((t: any) => {
+          let status: TaskStatus = 'To Do';
+          if (t.status === 'Completed') status = 'Completed';
+          else if (t.status === 'In Progress') status = 'In Progress';
+          else if (t.status === 'In Review') status = 'In Review';
+          else if (t.status === 'To Do' || t.status === 'Pending') status = 'To Do';
+
+          let priority: TaskPriority = 'Medium';
+          if (['Low', 'Medium', 'High', 'Urgent'].includes(t.priority)) {
+            priority = t.priority;
+          }
+
+          const dueDateStr = formatDueDate(t.dueDate);
+
+          return {
+            id: t.id,
+            title: t.title || 'Untitled Task',
+            description: t.description || '',
+            category: (t.category || (t.categoryId ? 'Development' : 'Productivity')) as TaskCategory,
+            priority,
+            status,
+            dueDate: dueDateStr,
+            dueTime: t.dueTime || '17:00',
+            tags: Array.isArray(t.tags) ? t.tags : [],
+            createdAt: t.createdAt ? new Date(t.createdAt._seconds ? t.createdAt._seconds * 1000 : t.createdAt).toISOString() : new Date().toISOString(),
+            ownerId: t.userId || currentUser?.id || '',
+            ownerName: currentUser?.name || 'Me',
+            assignedTo: t.assignedTo || currentUser?.name || 'Me',
+            estimatedHours: t.estimatedHours || 2,
+          };
+        });
+        setTasks(mappedTasks);
+      }
+
+      // If user has admin rights, load all registered workspace users
+      if (currentUser?.role === 'admin' || currentUser?.isSuperAdmin) {
+        try {
+          const userRes = await api.getAdminUsers();
+          if (userRes.success && Array.isArray(userRes.data)) {
+            const mappedUsers: User[] = userRes.data.map((u: any) => ({
+              id: u.id,
+              name: u.name || 'User',
+              email: u.email || '',
+              role: u.role || 'user',
+              isSuperAdmin: Boolean(u.isSuperAdmin) || (u.email?.toLowerCase().trim() === 'omkarghangale36@gmail.com'),
+              status: u.status || 'Active',
+              avatar: u.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.name || 'User')}`,
+              department: u.department || 'Workspace',
+              registeredDate: u.createdAt
+                ? new Date(u.createdAt._seconds ? u.createdAt._seconds * 1000 : u.createdAt).toISOString().split('T')[0]
+                : new Date().toISOString().split('T')[0],
+              totalTasks: 0,
+              completedTasks: 0,
+            }));
+            setUsers(mappedUsers);
+          }
+        } catch {
+          // Ignore if non-admin or failed
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load tasks from backend:', err);
+    } finally {
+      setIsLoadingTasks(false);
+    }
+  }, [isAuthenticated, currentUser]);
 
   useEffect(() => {
-    localStorage.setItem('taskflow_users_v2', JSON.stringify(users));
-  }, [users]);
-
-  useEffect(() => {
-    localStorage.setItem('taskflow_notifications_v2', JSON.stringify(notifications));
-  }, [notifications]);
-
-  useEffect(() => {
-    localStorage.setItem('taskflow_activity_v2', JSON.stringify(activityLogs));
-  }, [activityLogs]);
+    refreshTasks();
+  }, [refreshTasks]);
 
   // Log activity helper
-  const logActivity = useCallback(
+  const addLog = useCallback(
     (action: string, target: string, type: 'task' | 'user' | 'auth' | 'system' = 'task') => {
       const newLog: ActivityLog = {
-        id: 'log-' + Date.now().toString(36),
+        id: 'log-' + Date.now(),
         timestamp: new Date().toISOString(),
         actor: currentUser?.name || 'Current User',
         actorAvatar: currentUser?.avatar,
         action,
         target,
         type,
-        ipAddress: '192.168.1.104',
       };
-      setActivityLogs((prev) => [newLog, ...prev.slice(0, 49)]); // keep last 50
+      setActivityLogs((prev) => [newLog, ...prev.slice(0, 19)]);
     },
     [currentUser]
   );
 
   // Add Task
-  const addTask = useCallback(
-    (data: Omit<Task, 'id' | 'createdAt' | 'ownerId' | 'ownerName'>): Task => {
-      const newTask: Task = {
-        ...data,
-        id: 'tsk-' + Date.now().toString(36),
-        createdAt: new Date().toISOString(),
-        ownerId: currentUser?.id || 'usr-1',
-        ownerName: currentUser?.name || 'Alex Morgan',
+  const addTask = async (
+    data: Omit<Task, 'id' | 'createdAt' | 'ownerId' | 'ownerName'>
+  ): Promise<Task | null> => {
+    try {
+      const payload = {
+        title: data.title,
+        description: data.description,
+        priority: data.priority,
+        status: data.status === 'To Do' ? 'Pending' : data.status,
+        dueDate: data.dueDate ? `${data.dueDate}T12:00:00Z` : null,
       };
 
-      setTasks((prev) => [newTask, ...prev]);
-      logActivity('created task', newTask.title, 'task');
-
-      // Add Notification
-      const newNotif: NotificationItem = {
-        id: 'notif-' + Date.now().toString(36),
-        title: 'New Task Created',
-        message: `"${newTask.title}" scheduled for ${newTask.dueDate}`,
-        type: 'created',
-        timestamp: new Date().toISOString(),
-        read: false,
-        taskId: newTask.id,
-      };
-      setNotifications((prev) => [newNotif, ...prev]);
-
-      showToast('Task Created', `"${newTask.title}" has been successfully added.`, 'success');
-      return newTask;
-    },
-    [currentUser, logActivity, showToast]
-  );
+      const res = await api.createTask(payload);
+      if (res.success && res.data) {
+        const newTask: Task = {
+          ...data,
+          id: res.data.id,
+          createdAt: new Date().toISOString(),
+          ownerId: currentUser?.id || '',
+          ownerName: currentUser?.name || 'Me',
+        };
+        setTasks((prev) => [newTask, ...prev]);
+        addLog('created task', newTask.title);
+        showToast('Task Created', `"${newTask.title}" has been saved.`, 'success');
+        return newTask;
+      }
+      return null;
+    } catch (err: any) {
+      console.error('Add task error:', err);
+      showToast('Error', err.message || 'Failed to create task.', 'error');
+      return null;
+    }
+  };
 
   // Update Task
-  const updateTask = useCallback(
-    (taskId: string, updates: Partial<Task>) => {
+  const updateTask = async (taskId: string, updates: Partial<Task>) => {
+    try {
+      const payload: any = {};
+      if (updates.title !== undefined) payload.title = updates.title;
+      if (updates.description !== undefined) payload.description = updates.description;
+      if (updates.priority !== undefined) payload.priority = updates.priority;
+      if (updates.status !== undefined) {
+        payload.status = updates.status === 'To Do' ? 'Pending' : updates.status;
+      }
+      if (updates.dueDate !== undefined) {
+        payload.dueDate = updates.dueDate ? `${updates.dueDate}T12:00:00Z` : null;
+      }
+
+      await api.updateTask(taskId, payload);
+
       setTasks((prev) =>
-        prev.map((t) => {
-          if (t.id === taskId) {
-            const updated = { ...t, ...updates };
-            if (updates.status === 'Completed' && t.status !== 'Completed') {
-              updated.completedAt = new Date().toISOString();
-            }
-            return updated;
-          }
-          return t;
-        })
+        prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t))
       );
 
-      const task = tasks.find((t) => t.id === taskId);
-      logActivity('updated task', task ? task.title : 'Task ' + taskId, 'task');
+      const updated = tasks.find((t) => t.id === taskId);
+      if (updated) {
+        addLog('updated task', updated.title);
+      }
       showToast('Task Updated', 'Changes saved successfully.', 'info');
-    },
-    [tasks, logActivity, showToast]
-  );
+    } catch (err: any) {
+      console.error('Update task error:', err);
+      showToast('Error', err.message || 'Failed to update task.', 'error');
+    }
+  };
 
   // Delete Task
-  const deleteTask = useCallback(
-    (taskId: string) => {
-      const task = tasks.find((t) => t.id === taskId);
+  const deleteTask = async (taskId: string) => {
+    try {
+      const target = tasks.find((t) => t.id === taskId);
+      await api.deleteTask(taskId);
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
-      logActivity('deleted task', task ? task.title : 'Task ' + taskId, 'task');
+      if (target) {
+        addLog('deleted task', target.title);
+      }
       showToast('Task Deleted', 'The task has been permanently removed.', 'info');
-    },
-    [tasks, logActivity, showToast]
-  );
+    } catch (err: any) {
+      console.error('Delete task error:', err);
+      showToast('Error', err.message || 'Failed to delete task.', 'error');
+    }
+  };
 
   // Duplicate Task
-  const duplicateTask = useCallback(
-    (taskId: string) => {
-      const task = tasks.find((t) => t.id === taskId);
-      if (!task) return;
-
-      const duplicated: Task = {
-        ...task,
-        id: 'tsk-' + Date.now().toString(36),
-        title: `${task.title} (Copy)`,
-        status: 'To Do',
-        createdAt: new Date().toISOString(),
-        completedAt: undefined,
-      };
-
-      setTasks((prev) => [duplicated, ...prev]);
-      logActivity('duplicated task', duplicated.title, 'task');
-      showToast('Task Duplicated', `Created a copy of "${task.title}".`, 'success');
-    },
-    [tasks, logActivity, showToast]
-  );
+  const duplicateTask = async (taskId: string) => {
+    const existing = tasks.find((t) => t.id === taskId);
+    if (!existing) return;
+    await addTask({
+      title: `${existing.title} (Copy)`,
+      description: existing.description,
+      category: existing.category,
+      priority: existing.priority,
+      status: 'To Do',
+      dueDate: existing.dueDate,
+      dueTime: existing.dueTime,
+      tags: [...existing.tags],
+      assignedTo: existing.assignedTo,
+      estimatedHours: existing.estimatedHours,
+    });
+  };
 
   // Toggle Task Complete
-  const toggleTaskComplete = useCallback(
-    (taskId: string) => {
-      setTasks((prev) =>
-        prev.map((t) => {
-          if (t.id === taskId) {
-            const isNowCompleted = t.status !== 'Completed';
-            const updatedStatus: TaskStatus = isNowCompleted ? 'Completed' : 'To Do';
+  const toggleTaskComplete = async (taskId: string) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    const isNowCompleted = task.status !== 'Completed';
+    const newStatus: TaskStatus = isNowCompleted ? 'Completed' : 'To Do';
 
-            if (isNowCompleted) {
-              // Trigger Confetti!
-              try {
-                confetti({
-                  particleCount: 70,
-                  spread: 60,
-                  origin: { y: 0.75 },
-                  colors: ['#2563eb', '#3b82f6', '#10b981', '#6366f1'],
-                });
-              } catch (e) {
-                console.error(e);
-              }
+    await updateTask(taskId, {
+      status: newStatus,
+      completedAt: isNowCompleted ? new Date().toISOString() : undefined,
+    });
 
-              showToast('Task Completed! 🎉', `"${t.title}" is marked as done.`, 'success');
+    if (isNowCompleted) {
+      try {
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.8 },
+        });
+      } catch {}
+      showToast('Task Completed', `Great work on "${task.title}"!`, 'success');
+    }
+  };
 
-              const completeNotif: NotificationItem = {
-                id: 'notif-' + Date.now().toString(36),
-                title: 'Task Completed',
-                message: `You marked "${t.title}" as completed. Great job!`,
-                type: 'completed',
-                timestamp: new Date().toISOString(),
-                read: false,
-                taskId: t.id,
-              };
-              setNotifications((n) => [completeNotif, ...n]);
-            } else {
-              showToast('Task Reopened', `"${t.title}" moved back to To Do.`, 'info');
-            }
+  // Move Task Status (e.g. Kanban drag/drop)
+  const moveTaskStatus = async (taskId: string, newStatus: TaskStatus) => {
+    await updateTask(taskId, {
+      status: newStatus,
+      completedAt: newStatus === 'Completed' ? new Date().toISOString() : undefined,
+    });
+  };
 
-            return {
-              ...t,
-              status: updatedStatus,
-              completedAt: isNowCompleted ? new Date().toISOString() : undefined,
-            };
-          }
-          return t;
-        })
-      );
-    },
-    [showToast]
-  );
+  // Add Category
+  const addCategory = async (name: string) => {
+    try {
+      const res = await api.createCategory(name);
+      if (res.success && res.data) {
+        setCategories((prev) => [...prev, { id: res.data.id, name: res.data.categoryName || name }]);
+        showToast('Category Created', `"${name}" added.`, 'success');
+      }
+    } catch (err: any) {
+      showToast('Error', err.message || 'Could not create category.', 'error');
+    }
+  };
 
-  // Move Task Status (For Kanban and inline moves)
-  const moveTaskStatus = useCallback(
-    (taskId: string, newStatus: TaskStatus) => {
-      setTasks((prev) =>
-        prev.map((t) => {
-          if (t.id === taskId) {
-            if (t.status === newStatus) return t;
+  // Admin user stubs (maintained for admin view consistency)
+  const addUser = (userData: Omit<User, 'id' | 'registeredDate' | 'totalTasks' | 'completedTasks'>) => {
+    const newUser: User = {
+      ...userData,
+      id: 'usr-' + Date.now(),
+      registeredDate: new Date().toISOString().split('T')[0],
+      totalTasks: 0,
+      completedTasks: 0,
+    };
+    setUsers((prev) => [newUser, ...prev]);
+    showToast('Member Added', `${newUser.name} added.`, 'success');
+  };
 
-            if (newStatus === 'Completed') {
-              try {
-                confetti({
-                  particleCount: 60,
-                  spread: 50,
-                  origin: { y: 0.8 },
-                });
-              } catch (e) {
-                console.error(e);
-              }
-            }
+  const updateUser = (userId: string, updates: Partial<User>) => {
+    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, ...updates } : u)));
+    showToast('Member Updated', 'User details saved.', 'info');
+  };
 
-            return {
-              ...t,
-              status: newStatus,
-              completedAt: newStatus === 'Completed' ? new Date().toISOString() : undefined,
-            };
-          }
-          return t;
-        })
-      );
+  const deleteUser = (userId: string) => {
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+    showToast('Member Removed', 'User removed from workspace.', 'info');
+  };
 
-      const task = tasks.find((t) => t.id === taskId);
-      showToast('Status Updated', `Moved to "${newStatus}"`, 'info');
-      logActivity('moved status of', `${task?.title || 'task'} to ${newStatus}`, 'task');
-    },
-    [tasks, showToast, logActivity]
-  );
-
-  // Admin User CRUD
-  const addUser = useCallback(
-    (userData: Omit<User, 'id' | 'registeredDate' | 'totalTasks' | 'completedTasks'>) => {
-      const newUser: User = {
-        ...userData,
-        id: 'usr-' + Date.now().toString(36),
-        registeredDate: new Date().toISOString().split('T')[0],
-        totalTasks: 0,
-        completedTasks: 0,
-      };
-      setUsers((prev) => [newUser, ...prev]);
-      logActivity('registered new user', newUser.name, 'user');
-      showToast('User Created', `User account for ${newUser.name} created.`, 'success');
-    },
-    [logActivity, showToast]
-  );
-
-  const updateUser = useCallback(
-    (userId: string, updates: Partial<User>) => {
-      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, ...updates } : u)));
-      const targetUser = users.find((u) => u.id === userId);
-      logActivity('updated account for', targetUser ? targetUser.name : userId, 'user');
-      showToast('User Updated', 'Account details updated successfully.', 'info');
-    },
-    [users, logActivity, showToast]
-  );
-
-  const deleteUser = useCallback(
-    (userId: string) => {
-      const targetUser = users.find((u) => u.id === userId);
-      setUsers((prev) => prev.filter((u) => u.id !== userId));
-      logActivity('deleted user account', targetUser ? targetUser.name : userId, 'user');
-      showToast('User Removed', 'User account permanently deleted.', 'info');
-    },
-    [users, logActivity, showToast]
-  );
-
-  // Notification actions
-  const markNotificationRead = useCallback((id: string) => {
+  // Notifications
+  const markNotificationRead = (id: string) => {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-  }, []);
+  };
 
-  const markAllNotificationsRead = useCallback(() => {
+  const markAllNotificationsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    showToast('Notifications Marked Read', 'All notifications cleared.', 'info');
-  }, [showToast]);
+  };
 
-  const clearNotifications = useCallback(() => {
+  const clearNotifications = () => {
     setNotifications([]);
-    showToast('Notifications Cleared', 'Notification tray is now empty.', 'info');
-  }, [showToast]);
+  };
 
-  const unreadNotificationCount = useMemo(() => {
-    return notifications.filter((n) => !n.read).length;
-  }, [notifications]);
+  const unreadNotificationCount = notifications.filter((n) => !n.read).length;
 
-  // Today string YYYY-MM-DD
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  // Real Computed Statistics (strictly derived from live tasks)
+  const todayStr = new Date().toISOString().split('T')[0];
 
-  // Filtered tasks
-  const filteredTasks = useMemo(() => {
-    return tasks
-      .filter((task) => {
-        // Search query
-        if (searchQuery.trim()) {
-          const q = searchQuery.toLowerCase();
-          const matchTitle = task.title.toLowerCase().includes(q);
-          const matchDesc = task.description.toLowerCase().includes(q);
-          const matchCategory = task.category.toLowerCase().includes(q);
-          const matchTags = task.tags.some((t) => t.toLowerCase().includes(q));
-          if (!matchTitle && !matchDesc && !matchCategory && !matchTags) return false;
-        }
-
-        // Category filter
-        if (selectedCategory !== 'All' && task.category !== selectedCategory) {
-          return false;
-        }
-
-        // Priority filter
-        if (selectedPriority !== 'All' && task.priority !== selectedPriority) {
-          return false;
-        }
-
-        // Status filter
-        if (selectedStatus !== 'All' && task.status !== selectedStatus) {
-          return false;
-        }
-
-        return true;
-      })
-      .sort((a, b) => {
-        let comp = 0;
-        if (sortBy === 'dueDate') {
-          comp = a.dueDate.localeCompare(b.dueDate);
-        } else if (sortBy === 'priority') {
-          const priorityWeights: Record<TaskPriority, number> = {
-            Urgent: 4,
-            High: 3,
-            Medium: 2,
-            Low: 1,
-          };
-          comp = priorityWeights[b.priority] - priorityWeights[a.priority];
-        } else if (sortBy === 'createdAt') {
-          comp = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        } else if (sortBy === 'title') {
-          comp = a.title.localeCompare(b.title);
-        }
-        return sortOrder === 'asc' ? comp : -comp;
-      });
-  }, [tasks, searchQuery, selectedCategory, selectedPriority, selectedStatus, sortBy, sortOrder]);
-
-  // Computed metrics
   const stats = useMemo(() => {
     const total = tasks.length;
     const completed = tasks.filter((t) => t.status === 'Completed').length;
     const pending = total - completed;
     const overdue = tasks.filter(
-      (t) => t.status !== 'Completed' && t.dueDate < todayStr
+      (t) => t.status !== 'Completed' && t.dueDate && t.dueDate < todayStr
     ).length;
     const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
@@ -480,26 +430,53 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [tasks, todayStr]);
 
   const upcomingTasks = useMemo(() => {
-    return tasks
-      .filter((t) => t.dueDate > todayStr && t.status !== 'Completed')
-      .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+    return tasks.filter((t) => t.dueDate && t.dueDate > todayStr && t.status !== 'Completed');
   }, [tasks, todayStr]);
 
   const overdueTasks = useMemo(() => {
-    return tasks
-      .filter((t) => t.dueDate < todayStr && t.status !== 'Completed')
-      .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+    return tasks.filter((t) => t.dueDate && t.dueDate < todayStr && t.status !== 'Completed');
   }, [tasks, todayStr]);
+
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((t) => {
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matches =
+          t.title.toLowerCase().includes(q) ||
+          t.description.toLowerCase().includes(q) ||
+          t.tags.some((tag) => tag.toLowerCase().includes(q));
+        if (!matches) return false;
+      }
+      if (selectedCategory !== 'All' && t.category !== selectedCategory) return false;
+      if (selectedPriority !== 'All' && t.priority !== selectedPriority) return false;
+      if (selectedStatus !== 'All' && t.status !== selectedStatus) return false;
+      return true;
+    }).sort((a, b) => {
+      let comparison = 0;
+      if (sortBy === 'dueDate') {
+        comparison = (a.dueDate || '9999').localeCompare(b.dueDate || '9999');
+      } else if (sortBy === 'priority') {
+        const order: Record<TaskPriority, number> = { Urgent: 4, High: 3, Medium: 2, Low: 1 };
+        comparison = (order[b.priority] || 0) - (order[a.priority] || 0);
+      } else if (sortBy === 'title') {
+        comparison = a.title.localeCompare(b.title);
+      } else {
+        comparison = (b.createdAt || '').localeCompare(a.createdAt || '');
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  }, [tasks, searchQuery, selectedCategory, selectedPriority, selectedStatus, sortBy, sortOrder]);
 
   return (
     <TaskContext.Provider
       value={{
         tasks,
         users,
+        categories,
         notifications,
         activityLogs,
         unreadNotificationCount,
-
+        isLoadingTasks,
         searchQuery,
         setSearchQuery,
         selectedCategory,
@@ -512,22 +489,20 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSortBy,
         sortOrder,
         setSortOrder,
-
         addTask,
         updateTask,
         deleteTask,
         duplicateTask,
         toggleTaskComplete,
         moveTaskStatus,
-
+        refreshTasks,
+        addCategory,
         addUser,
         updateUser,
         deleteUser,
-
         markNotificationRead,
         markAllNotificationsRead,
         clearNotifications,
-
         stats,
         todayTasks,
         upcomingTasks,

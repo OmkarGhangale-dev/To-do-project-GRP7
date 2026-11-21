@@ -136,7 +136,7 @@ export const TaskTable: React.FC<TaskTableProps> = ({
       <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b border-[#EEF2F6] dark:border-slate-800 bg-[#FBFBFE] dark:bg-slate-900/50">
         <div className="flex items-center gap-2.5">
           <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
-            Sprint Task Catalog
+            Task List
           </span>
           <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#ECF2FF] text-[#5D87FF] dark:bg-blue-950/60 dark:text-blue-300">
             {filteredTasks.length} {filteredTasks.length === 1 ? 'task' : 'tasks'}

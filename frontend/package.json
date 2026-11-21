@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && powershell -Command \"Copy-Item dist\\index.src.html index.html -Force; Copy-Item index.html dist\\index.html -Force\"",
+    "build": "tsc -b && vite build && node -e \"const fs=require('fs'); if(fs.existsSync('dist/index.src.html')) fs.copyFileSync('dist/index.src.html', 'dist/index.html'); if(fs.existsSync('dist/index.html')) fs.copyFileSync('dist/index.html', 'index.html');\"",
     "lint": "oxlint",
     "preview": "vite preview"
   },
@@ -13,6 +13,7 @@
     "@tailwindcss/vite": "^4.3.5",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
+    "firebase": "^13.4.0",
     "lucide-react": "^1.76.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

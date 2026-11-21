@@ -13,6 +13,7 @@ import {
   Clock,
   AlertTriangle,
   ArrowRight,
+  Menu,
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -32,7 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigate,
 }) => {
   const { theme, toggleTheme } = useTheme();
-  const { currentUser, logout, activeRole, setActiveRole } = useAuth();
+  const { currentUser, logout, activeRole } = useAuth();
   const {
     notifications,
     unreadNotificationCount,
@@ -59,16 +60,6 @@ export const Header: React.FC<HeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleToggleRole = () => {
-    const nextRole = activeRole === 'admin' ? 'user' : 'admin';
-    setActiveRole(nextRole);
-    if (nextRole === 'admin') {
-      onNavigate('admin-overview');
-    } else {
-      onNavigate('overview');
-    }
-  };
-
   const getPageTitle = () => {
     switch (currentPage) {
       case 'overview':
@@ -88,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
       case 'settings':
         return 'Settings & Preferences';
       case 'admin-overview':
-        return 'Admin Portal Overview';
+        return 'Admin Overview';
       case 'admin-users':
         return 'User Management';
       case 'admin-tasks':
@@ -111,15 +102,24 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-30 bg-white/90 dark:bg-[#1E2530]/90 backdrop-blur-md border-b border-[#EEF2F6] dark:border-slate-800 transition-colors">
       <div className="px-5 sm:px-8 py-3.5 flex items-center justify-between gap-4">
-        {/* Left: Active Section & Status (Clean Header without Search or Hamburger) */}
+        {/* Left: Active Section + Mobile Hamburger */}
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            className="md:hidden p-2 -ml-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            aria-label="Toggle navigation menu"
+            title="Open menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+
           <div className="flex items-center gap-2.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#13DEB9] ring-4 ring-[#13DEB9]/20" />
             <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">
               {getPageTitle()}
             </h1>
-            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#ECF2FF] text-[#5D87FF] dark:bg-blue-950/60 dark:text-blue-300">
-              {activeRole === 'admin' ? 'Admin Portal' : 'G7 Workspace'}
+            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+              {activeRole === 'admin' ? 'Admin' : 'Workspace'}
             </span>
           </div>
         </div>
@@ -136,28 +136,25 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="hidden sm:inline">Add Task</span>
           </button>
 
-          {/* Mode Switcher Button */}
-          <button
-            type="button"
-            onClick={handleToggleRole}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all flex items-center gap-1.5 ${
-              activeRole === 'admin'
-                ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-[#111C2D] dark:text-white dark:border-slate-700 shadow-xs'
-                : 'bg-[#F4F6FA] text-slate-700 border-[#EEF2F6] dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 hover:bg-slate-200/70'
-            }`}
-          >
-            {activeRole === 'admin' ? (
+          {/* Static Role Indicator */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 select-none">
+            {currentUser?.isSuperAdmin ? (
               <>
-                <ShieldCheck className="w-3.5 h-3.5 text-purple-600 dark:text-[#5D87FF]" />
-                <span className="hidden md:inline">Admin Mode</span>
+                <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
+                <span className="hidden md:inline text-amber-600 dark:text-amber-400 font-bold">Super Admin</span>
+              </>
+            ) : currentUser?.role === 'admin' ? (
+              <>
+                <ShieldCheck className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                <span className="hidden md:inline text-purple-600 dark:text-purple-400 font-bold">Admin</span>
               </>
             ) : (
               <>
-                <Shield className="w-3.5 h-3.5 text-slate-500" />
-                <span className="hidden md:inline">User Mode</span>
+                <Shield className="w-3.5 h-3.5 text-slate-400" />
+                <span className="hidden md:inline text-slate-500 dark:text-slate-400 font-medium">Member</span>
               </>
             )}
-          </button>
+          </div>
 
           {/* Theme Toggle Button */}
           <button
@@ -316,17 +313,6 @@ export const Header: React.FC<HeaderProps> = ({
                   >
                     <UserIcon className="w-4 h-4 text-slate-400" />
                     My Profile & Settings
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setShowProfileMenu(false);
-                      handleToggleRole();
-                    }}
-                    className="w-full px-4 py-2 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-[#F4F6FA] dark:hover:bg-slate-800 flex items-center gap-2"
-                  >
-                    <Shield className="w-4 h-4 text-slate-400" />
-                    Switch to {activeRole === 'admin' ? 'User Dashboard' : 'Admin Console'}
                   </button>
 
                   <button

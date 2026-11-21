@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
-import { ToastProvider } from './context/ToastContext';
+import { ToastProvider, useToast } from './context/ToastContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { TaskProvider, useTask } from './context/TaskContext';
 
@@ -42,8 +42,9 @@ import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { Task, TaskStatus } from './types';
 
 const MainAppContent: React.FC = () => {
-  const { isAuthenticated, activeRole } = useAuth();
+  const { isAuthenticated, activeRole, currentUser, setActiveRole } = useAuth();
   const { deleteTask } = useTask();
+  const { showToast } = useToast();
 
   // Navigation page state
   const [currentPage, setCurrentPage] = useState<string>('overview');
@@ -52,6 +53,20 @@ const MainAppContent: React.FC = () => {
   // Sidebar responsive state
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  // Guard admin routes: non-admins are strictly blocked from accessing any admin pages
+  useEffect(() => {
+    if (currentPage.startsWith('admin-')) {
+      const isAdmin = currentUser?.role === 'admin' || currentUser?.isSuperAdmin;
+      if (!isAdmin) {
+        showToast('Access Denied', 'Administrator privileges required.', 'error');
+        setCurrentPage('overview');
+        if (activeRole !== 'user') {
+          setActiveRole('user');
+        }
+      }
+    }
+  }, [currentPage, currentUser, activeRole, setActiveRole, showToast]);
 
   // Task Modals state
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);

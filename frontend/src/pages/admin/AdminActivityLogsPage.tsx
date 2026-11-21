@@ -60,13 +60,12 @@ export const AdminActivityLogsPage: React.FC = () => {
             System Activity & Audit Trail
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Cryptographically timestamped operational log tracking actor actions and data mutations
+            Timestamped log of actor actions and system events
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          Live Audit Streaming
+        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+          Activity Log
         </div>
       </div>
 

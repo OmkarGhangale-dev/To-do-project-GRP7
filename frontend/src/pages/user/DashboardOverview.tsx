@@ -5,13 +5,11 @@ import {
   Clock,
   AlertTriangle,
   ListTodo,
-  TrendingUp,
   Calendar,
   CheckCircle,
   Circle,
   Eye,
   ArrowRight,
-  Sparkles,
 } from 'lucide-react';
 import { StatCard } from '../../components/common/StatCard';
 import { useAuth } from '../../context/AuthContext';
@@ -53,23 +51,28 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     year: 'numeric',
   });
 
-  const weeklyData = [
-    { day: 'Mon', completed: 3, created: 4 },
-    { day: 'Tue', completed: 5, created: 3 },
-    { day: 'Wed', completed: 4, created: 6 },
-    { day: 'Thu', completed: 7, created: 5 },
-    { day: 'Fri', completed: 6, created: 4 },
-    { day: 'Sat', completed: 2, created: 1 },
-    { day: 'Sun', completed: 1, created: 2 },
-  ];
-  const maxWeekly = 8;
+  // Calculate actual 7-day activity strictly from real user tasks
+  const daysShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weeklyData = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const dateStr = d.toISOString().split('T')[0];
+    const createdCount = tasks.filter((t) => t.createdAt && t.createdAt.startsWith(dateStr)).length;
+    const completedCount = tasks.filter(
+      (t) => t.status === 'Completed' && t.completedAt && t.completedAt.startsWith(dateStr)
+    ).length;
+    return {
+      day: daysShort[d.getDay()],
+      date: dateStr,
+      created: createdCount,
+      completed: completedCount,
+    };
+  });
 
-  const statusColors: Record<TaskStatus, string> = {
-    'To Do': '#94a3b8',
-    'In Progress': '#5D87FF',
-    'In Review': '#49BEFF',
-    Completed: '#13DEB9',
-  };
+  const maxWeekly = Math.max(
+    ...weeklyData.map((d) => Math.max(d.created, d.completed)),
+    4
+  );
 
   return (
     <div className="space-y-6">
@@ -77,9 +80,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       <div className="spike-card p-6 sm:p-8 bg-gradient-to-r from-white via-[#F8FAFC] to-[#F0F5FF] dark:from-[#1E2530] dark:via-[#1A222E] dark:to-[#172033] flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
         <div className="space-y-2 max-w-xl">
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#ECF2FF] text-[#5D87FF] dark:bg-blue-950/60 dark:text-blue-300">
-              Sprint 4 Active
-            </span>
             <span className="text-xs text-slate-400 font-medium flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5" /> {todayFormatted}
             </span>
@@ -138,14 +138,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
           <div>
             <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Sprint Velocity
+              Completion Rate
             </div>
             <div className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5">
               {stats.completed} of {stats.total} Done
             </div>
-            <span className="text-[11px] font-semibold text-[#13DEB9] flex items-center gap-1 mt-0.5">
-              <TrendingUp className="w-3.5 h-3.5" /> +14.8% vs last sprint
-            </span>
           </div>
         </div>
       </div>
@@ -155,8 +152,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         <StatCard
           title="Total Tasks"
           value={stats.total}
-          change="+12% this week"
-          changeType="positive"
+          changeType="neutral"
           icon={ListTodo}
           iconBgColor="bg-[#ECF2FF] dark:bg-blue-950/60"
           iconColor="text-[#5D87FF]"
@@ -177,7 +173,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         <StatCard
           title="In Progress"
           value={stats.pending}
-          change="3 in review"
           changeType="neutral"
           icon={Clock}
           iconBgColor="bg-[#FEF5E5] dark:bg-amber-950/60"
@@ -390,11 +385,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 Recent Workspace Activity
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                Real-time operational event stream
+                Latest task and workspace activity
               </p>
             </div>
-            <span className="text-[11px] font-bold text-[#13DEB9] bg-[#E6FFFA] dark:bg-emerald-950/60 px-2 py-0.5 rounded-full">
-              Live
+            <span className="text-[11px] font-medium text-slate-400">
+              Recent
             </span>
           </div>
 

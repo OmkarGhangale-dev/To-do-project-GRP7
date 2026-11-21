@@ -143,8 +143,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
                   <button
                     type="button"
-                    onClick={() => onAddTaskWithDate(cell.dateStr)}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-[#5D87FF] rounded-md hover:bg-slate-100 transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAddTaskWithDate(cell.dateStr);
+                    }}
+                    className="opacity-70 md:opacity-0 md:group-hover:opacity-100 p-1 text-slate-400 hover:text-[#5D87FF] rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
                     title={`Add task on ${cell.dateStr}`}
                   >
                     <Plus className="w-3.5 h-3.5" />

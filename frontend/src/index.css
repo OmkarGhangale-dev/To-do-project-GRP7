@@ -24,6 +24,8 @@
     min-height: 100vh;
     background-color: var(--spike-bg);
     color: #1E293B;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   .dark body,
@@ -33,10 +35,16 @@
     color-scheme: dark;
   }
 
+  /* Focus styles for accessibility */
+  :focus-visible {
+    outline: 2px solid var(--spike-primary);
+    outline-offset: 2px;
+  }
+
   /* Custom subtle scrollbars */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
   }
 
   ::-webkit-scrollbar-track {
@@ -49,7 +57,7 @@
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(148, 163, 184, 0.5);
+    background: rgba(148, 163, 184, 0.55);
   }
 
   .dark ::-webkit-scrollbar-thumb {
@@ -59,49 +67,277 @@
   .dark ::-webkit-scrollbar-thumb:hover {
     background: rgba(71, 85, 105, 0.7);
   }
+
+  /* Smooth transitions for theme changes */
+  *,
+  *::before,
+  *::after {
+    transition-property: background-color, border-color, color;
+    transition-duration: 150ms;
+    transition-timing-function: ease;
+  }
+
+  /* Disable transition on interactive elements that have their own transitions */
+  button, a, input, select, textarea {
+    transition-property: background-color, border-color, color, box-shadow, transform, opacity;
+    transition-duration: 150ms;
+  }
 }
 
-/* Spike Pro Card Style */
+/* ─── Spike Card Component ─── */
 .spike-card {
   background: #ffffff;
   border: 1px solid #eef2f6;
   border-radius: 1rem;
-  box-shadow: 0 4px 18px 0 rgba(0, 0, 0, 0.03);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .dark .spike-card {
   background: #151D2A;
-  border-color: #243042;
-  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.3);
+  border-color: #1E2D3D;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.25);
 }
 
 .spike-card:hover {
-  box-shadow: 0 8px 24px 0 rgba(93, 135, 255, 0.08);
+  box-shadow: 0 4px 16px 0 rgba(93, 135, 255, 0.07);
 }
 
-/* Dropdown animations & styling */
+.dark .spike-card:hover {
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.4);
+  border-color: #243042;
+}
+
+/* ─── Dropdown animations ─── */
 .spike-dropdown {
   background: #ffffff;
   border: 1px solid #eef2f6;
   border-radius: 0.875rem;
-  box-shadow: 0 12px 32px -4px rgba(17, 28, 45, 0.12), 0 4px 12px -2px rgba(17, 28, 45, 0.06);
-  animation: dropdownIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 10px 28px -4px rgba(17, 28, 45, 0.1), 0 2px 8px -2px rgba(17, 28, 45, 0.06);
+  animation: dropdownIn 0.14s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dark .spike-dropdown {
   background: #151D2A;
-  border-color: #243042;
+  border-color: #1E2D3D;
   box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.5), 0 4px 14px -2px rgba(0, 0, 0, 0.3);
 }
 
 @keyframes dropdownIn {
   from {
     opacity: 0;
-    transform: translateY(-6px) scale(0.97);
+    transform: translateY(-8px) scale(0.97);
   }
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+/* ─── Page transition ─── */
+@keyframes pageIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition {
+  animation: pageIn 0.2s ease;
+}
+
+/* ─── Animate in utility ─── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: fadeInUp 0.2s ease both;
+}
+
+.fade-in {
+  animation: fadeIn 0.2s ease both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.slide-in-from-bottom-3 {
+  animation: slideInBottom3 0.2s ease both;
+}
+
+@keyframes slideInBottom3 {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─── Form input base style ─── */
+.form-input {
+  width: 100%;
+  padding: 0.5rem 0.875rem;
+  background-color: #F4F6FA;
+  border: 1px solid #E2E8F0;
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  color: #1E293B;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--spike-primary);
+  box-shadow: 0 0 0 3px rgba(93, 135, 255, 0.12);
+}
+
+.dark .form-input {
+  background-color: #1A2436;
+  border-color: #243042;
+  color: #F1F5F9;
+}
+
+.dark .form-input:focus {
+  border-color: var(--spike-primary);
+  box-shadow: 0 0 0 3px rgba(93, 135, 255, 0.15);
+}
+
+.form-input::placeholder {
+  color: #94A3B8;
+}
+
+/* ─── Badge variants ─── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.badge-blue { background: #EEF4FF; color: #3B5BDB; }
+.badge-green { background: #ECFDF5; color: #0A8554; }
+.badge-amber { background: #FFFBEB; color: #92400E; }
+.badge-red { background: #FEF2F2; color: #991B1B; }
+.badge-slate { background: #F1F5F9; color: #475569; }
+
+.dark .badge-blue { background: rgba(93, 135, 255, 0.15); color: #93B4FF; }
+.dark .badge-green { background: rgba(19, 222, 185, 0.12); color: #5EEAD4; }
+.dark .badge-amber { background: rgba(255, 174, 31, 0.12); color: #FCD34D; }
+.dark .badge-red { background: rgba(250, 137, 107, 0.12); color: #FCA5A5; }
+.dark .badge-slate { background: rgba(148, 163, 184, 0.1); color: #94A3B8; }
+
+/* ─── Sidebar nav item ─── */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #64748B;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  position: relative;
+}
+
+.nav-item:hover {
+  background: #F1F5F9;
+  color: #1E293B;
+}
+
+.dark .nav-item {
+  color: #64748B;
+}
+
+.dark .nav-item:hover {
+  background: #1E2D3D;
+  color: #CBD5E1;
+}
+
+.nav-item.active {
+  background: #EEF4FF;
+  color: #3B5BDB;
+  font-weight: 600;
+}
+
+.dark .nav-item.active {
+  background: rgba(93, 135, 255, 0.12);
+  color: #93B4FF;
+}
+
+/* ─── Button variants ─── */
+.btn-primary {
+  background: var(--spike-primary);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.5625rem 1rem;
+  border-radius: 0.625rem;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.btn-primary:hover {
+  background: var(--spike-primary-hover);
+  box-shadow: 0 4px 12px rgba(93, 135, 255, 0.3);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid #E2E8F0;
+  color: #475569;
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.625rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.btn-ghost:hover {
+  background: #F1F5F9;
+  border-color: #CBD5E1;
+}
+
+.dark .btn-ghost {
+  border-color: #243042;
+  color: #94A3B8;
+}
+
+.dark .btn-ghost:hover {
+  background: #1E2D3D;
+  border-color: #334155;
+  color: #CBD5E1;
 }
