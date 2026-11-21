@@ -48,12 +48,16 @@ const MainAppContent: React.FC = () => {
   const isEffectiveAdmin = currentUser?.role === 'admin' && activeRole === 'admin';
 
   // Navigation page state
-  const [currentPage, setCurrentPage] = useState<string>('overview');
+  const [currentPage, setCurrentPage] = useState<string>(() => {
+    return isEffectiveAdmin ? 'admin-overview' : 'overview';
+  });
 
-  // Route guard: Non-admin users are strictly redirected from admin routes
+  // Route guard: Synchronize active page between admin and user contexts
   React.useEffect(() => {
     if (!isEffectiveAdmin && currentPage.startsWith('admin-')) {
       setCurrentPage('overview');
+    } else if (isEffectiveAdmin && currentPage === 'overview') {
+      setCurrentPage('admin-overview');
     }
   }, [isEffectiveAdmin, currentPage]);
   const [authView, setAuthView] = useState<'login' | 'register' | 'forgot'>('login');

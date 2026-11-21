@@ -3,6 +3,7 @@ import { Plus, X, Calendar, Clock, Tag, ChevronDown } from 'lucide-react';
 import { Modal } from '../common/Modal';
 import { Task, TaskPriority, TaskStatus, TaskCategory } from '../../types';
 import { useTask } from '../../context/TaskContext';
+import { useAuth } from '../../context/AuthContext';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -32,6 +33,8 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   defaultStatus = 'To Do',
 }) => {
   const { addTask, updateTask, users } = useTask();
+  const { currentUser } = useAuth();
+  const defaultAssignee = currentUser?.name || 'Sarah Chen';
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -42,7 +45,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   const [dueTime, setDueTime] = useState('17:00');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
-  const [assignedTo, setAssignedTo] = useState('Alex Morgan');
+  const [assignedTo, setAssignedTo] = useState(defaultAssignee);
   const [estimatedHours, setEstimatedHours] = useState(4);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -56,7 +59,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
       setDueDate(taskToEdit.dueDate);
       setDueTime(taskToEdit.dueTime || '17:00');
       setTags(taskToEdit.tags || []);
-      setAssignedTo(taskToEdit.assignedTo || 'Alex Morgan');
+      setAssignedTo(taskToEdit.assignedTo || defaultAssignee);
       setEstimatedHours(taskToEdit.estimatedHours || 4);
     } else {
       // Reset form
@@ -68,11 +71,11 @@ export const TaskModal: React.FC<TaskModalProps> = ({
       setDueDate(defaultDate || new Date().toISOString().split('T')[0]);
       setDueTime('17:00');
       setTags(['Frontend']);
-      setAssignedTo('Alex Morgan');
+      setAssignedTo(defaultAssignee);
       setEstimatedHours(4);
     }
     setErrors({});
-  }, [taskToEdit, isOpen, defaultDate, defaultStatus]);
+  }, [taskToEdit, isOpen, defaultDate, defaultStatus, defaultAssignee]);
 
   const handleAddTag = (e: React.KeyboardEvent | React.MouseEvent) => {
     if ('key' in e && e.key !== 'Enter') return;

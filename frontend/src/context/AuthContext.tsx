@@ -26,8 +26,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error(e);
       }
     }
-    // Default to the first admin user (Alex Morgan)
-    return INITIAL_USERS[0];
+    // Default to the standard workspace member (Sarah Chen, User Mode) for authentic user experience
+    return INITIAL_USERS[1];
   });
 
   const [activeRole, setActiveRoleState] = useState<UserRole>(() => {
@@ -61,18 +61,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = (email: string, _password?: string, _remember: boolean = true) => {
     const cleanEmail = email.trim().toLowerCase();
-    const existing = INITIAL_USERS.find((u) => u.email.toLowerCase() === cleanEmail);
-    if (existing) {
-      setCurrentUser(existing);
-      setActiveRoleState(existing.role);
+
+    // Check direct match
+    let matched = INITIAL_USERS.find((u) => u.email.toLowerCase() === cleanEmail);
+
+    // Support backend API contract default accounts
+    if (!matched) {
+      if (cleanEmail === 'admin@taskflow.com') {
+        matched = INITIAL_USERS.find((u) => u.role === 'admin') || INITIAL_USERS[0];
+      } else if (cleanEmail === 'user@taskflow.com' || cleanEmail === 'rashika@taskflow.com') {
+        matched = INITIAL_USERS.find((u) => u.role === 'user') || INITIAL_USERS[1];
+      }
+    }
+
+    if (matched) {
+      setCurrentUser(matched);
+      setActiveRoleState(matched.role);
       return true;
     }
-    // If not in initial list, log in as custom user
+
+    // If not in initial list, log in as custom user (admin if email includes 'admin')
+    const assignedRole: UserRole = cleanEmail.includes('admin') ? 'admin' : 'user';
     const newUser: User = {
       id: 'usr-' + Date.now().toString(36),
       name: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
       email: email.trim(),
-      role: 'user',
+      role: assignedRole,
       status: 'Active',
       avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
       department: 'Productivity',
@@ -81,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       completedTasks: 0,
     };
     setCurrentUser(newUser);
-    setActiveRoleState('user');
+    setActiveRoleState(assignedRole);
     return true;
   };
 

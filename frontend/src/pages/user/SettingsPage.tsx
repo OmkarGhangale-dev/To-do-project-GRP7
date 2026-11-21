@@ -42,6 +42,16 @@ export const SettingsPage: React.FC = () => {
   // Delete modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  React.useEffect(() => {
+    if (currentUser) {
+      setName(currentUser.name || '');
+      setEmail(currentUser.email || '');
+      setDepartment(currentUser.department || '');
+      setPhone(currentUser.phone || '+1 (555) 234-5678');
+      setBio(currentUser.bio || '');
+    }
+  }, [currentUser]);
+
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     updateProfile({
