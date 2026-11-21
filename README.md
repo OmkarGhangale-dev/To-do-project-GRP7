@@ -1,170 +1,184 @@
-# 📝 To-Do Application
+# TaskFlow – To-Do Management Application
 
-A full-stack To-Do Management Application that helps users organize their daily activities, manage tasks, and stay productive. Users can create, update, delete, and track tasks through a simple and user-friendly interface.
+A full-stack task management application that helps users organize daily activities, manage tasks, and stay productive. TaskFlow provides user authentication, task management, categories, and administrative functionality through a responsive interface.
 
-## 🚀 Features
+## Features
 
-- **User Authentication** – Register and log in securely.
-- **Task Management** – Create, view, update, and delete tasks.
-- **Categories** – Organize tasks into different categories.
-- **Task Tracking** – Manage task completion and pending activities.
-- **Database Integration** – Store and retrieve application data.
-- **Responsive Interface** – Access the application across different screen sizes.
+- **User Authentication:** Register and log in securely.
+- **Google Authentication:** Sign in using Firebase Authentication, when configured.
+- **Task Management:** Create, view, update, and delete tasks.
+- **Categories:** Organize tasks into categories.
+- **Task Tracking:** Manage pending and completed tasks.
+- **Admin Functionality:** Administrative routes and functionality.
+- **Responsive Interface:** Use the application across different screen sizes.
+- **Cloud Database:** Store application data using Firebase Cloud Firestore.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Technology | Purpose |
 |---|---|
-| HTML, CSS, JavaScript / React | Frontend |
-| Node.js | Backend Runtime |
-| Express.js | Backend Framework |
-| MySQL | Database |
-| Git & GitHub | Version Control |
+| React | Frontend UI |
+| TypeScript | Frontend development |
+| Vite | Frontend development and build tool |
+| Tailwind CSS | Styling |
+| Node.js | Backend runtime |
+| Express.js | REST API |
+| Firebase Authentication | User authentication |
+| Firebase Admin SDK | Backend authentication and administration |
+| Cloud Firestore | Database |
+| Git & GitHub | Version control |
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
-To-Do-Application/
+To-do-project-GRP7/
+│
+├── backend/
+│   ├── config/
+│   │   └── db.js
+│   ├── controllers/
+│   ├── routes/
+│   ├── middlewares/
+│   ├── tests/
+│   ├── server.js
+│   └── package.json
 │
 ├── frontend/
 │   ├── public/
 │   ├── src/
 │   └── package.json
 │
-├── backend/
-│   ├── config/
-│   ├── controllers/
-│   ├── routes/
-│   ├── middleware/
-│   ├── .env.example
-│   ├── server.js
-│   └── package.json
-│
 ├── database/
-│   └── todo_app.sql
-│
+├── docs/
+├── .env.example
 ├── .gitignore
+├── firebase.json
 └── README.md
 ```
 
-*Note: The structure above is illustrative. Adjust folder and file names to match the actual repository.*
+## Prerequisites
 
-## 📋 Prerequisites
+Install the following before starting:
 
-Before getting started, make sure you have installed:
-
-- [Node.js](https://nodejs.org/) (LTS version recommended)
+- [Node.js](https://nodejs.org/) – use a current LTS version compatible with Vite.
 - [Git](https://git-scm.com/)
-- [MySQL](https://dev.mysql.com/downloads/installer/) or access to a MySQL cloud database
-- A code editor such as [Visual Studio Code](https://code.visualstudio.com/)
+- [Visual Studio Code](https://code.visualstudio.com/) or another code editor.
+- A Google account to configure Firebase.
 
-## ⚙️ Installation & Setup
+## Getting Started
 
-### Step 1: Clone the Repository
+### 1. Clone the repository
 
-Open your terminal and run:
+Open a terminal and run:
 
 ```bash
-git clone YOUR_GITHUB_REPOSITORY_URL
+git clone https://github.com/OmkarGhangale-dev/To-do-project-GRP7.git
 ```
 
 Navigate into the project:
 
 ```bash
-cd YOUR_PROJECT_FOLDER
+cd To-do-project-GRP7
 ```
 
-### Step 2: Set Up the Database
+### 2. Configure Firebase
 
-1. Start your MySQL server.
-2. Open MySQL Workbench or MySQL Command Line.
-3. Create a database:
+The backend uses Firebase Admin SDK and Cloud Firestore.
 
-```sql
-CREATE DATABASE todo_app;
-```
+1. Open the [Firebase Console](https://console.firebase.google.com/).
+2. Create a Firebase project or select an existing one.
+3. Enable **Cloud Firestore** and create a database.
+4. Open **Authentication** and enable the sign-in providers used by the application.
+5. Open **Project Settings** and note your Firebase Project ID.
+6. Go to **Project Settings → Service Accounts**.
+7. Generate a new private key for the Firebase Admin SDK.
 
-4. Import the provided SQL file if your repository includes one:
+Keep the downloaded service-account JSON private. Do not upload it to GitHub or share it publicly.
 
-```bash
-mysql -u root -p todo_app < database/todo_app.sql
-```
+### 3. Configure the backend
 
-If your database is hosted on Railway or another cloud provider, use the database credentials provided by that service instead.
-
-### Step 3: Configure the Backend
-
-Navigate to the backend folder:
+Open a terminal in the project directory:
 
 ```bash
 cd backend
 ```
 
-Install dependencies:
+Install backend dependencies:
 
 ```bash
 npm install
 ```
 
-Create a `.env` file in the backend directory.
-
-Add your database and application configuration:
+Create a `.env` file inside the `backend` folder:
 
 ```env
 PORT=5000
-
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=your_mysql_password
-DB_NAME=todo_app
-DB_PORT=3306
+NODE_ENV=development
+FIREBASE_PROJECT_ID=your_firebase_project_id
+CORS_ORIGIN=http://localhost:5173
 ```
 
-Replace the example values with your actual configuration.
+Configure Firebase Admin credentials using either of these methods:
 
-**Important:** Never upload your `.env` file, database passwords, API keys, or service account credentials to GitHub.
+**Option A – Local development**
 
-### Step 4: Start the Backend
+Place your Firebase service-account JSON file at:
 
-Run:
-
-```bash
-npm start
+```text
+backend/serviceAccountKey.json
 ```
 
-For development, if your project supports Nodemon:
+The backend automatically checks this location.
+
+**Option B – Environment variable**
+
+Set `FIREBASE_SERVICE_ACCOUNT` to the complete service-account JSON content. This is useful for cloud deployments.
+
+Do not commit the service-account file or its contents.
+
+### 4. Start the backend
+
+From the `backend` directory, run:
 
 ```bash
 npm run dev
 ```
 
-The backend should now be running at:
+Or run the production start command:
+
+```bash
+npm start
+```
+
+The backend should start at:
 
 ```text
 http://localhost:5000
 ```
 
-### Step 5: Set Up the Frontend
+Open the URL in your browser to check the backend health endpoint.
 
-Open a new terminal and navigate to the frontend directory:
+A successful response should indicate that the TaskFlow Backend API is running. It also reports whether Firestore is reachable.
+
+### 5. Configure and start the frontend
+
+Open a **new terminal** from the project root:
 
 ```bash
 cd frontend
 ```
 
-Install dependencies:
+Install frontend dependencies:
 
 ```bash
 npm install
 ```
 
-Configure the frontend API URL using the environment variable expected by your frontend code.
+Configure the Firebase Web SDK settings and backend API URL using the environment-variable names expected by the frontend source code. You can find the Firebase configuration in the frontend source and obtain the Web App configuration from:
 
-For example, if using Vite:
+**Firebase Console → Project Settings → General → Your apps → Web app**
 
-```env
-VITE_API_URL=http://localhost:5000
-```
+Do not guess environment-variable names; use the names referenced by the frontend configuration.
 
 Start the frontend:
 
@@ -172,84 +186,152 @@ Start the frontend:
 npm run dev
 ```
 
-Open the local URL displayed in your terminal (usually):
+Open the local URL shown in the terminal. It is normally:
 
 ```text
 http://localhost:5173
 ```
 
-## 🔗 API Endpoints
+## Running the Complete Application
 
-The backend provides REST API endpoints for application functionality.
+For local development, keep both terminals running:
 
-| Method | Endpoint | Description |
+| Service | Command | Default URL |
 |---|---|---|
-| POST | `/api/auth/register` | Register a user |
-| GET | `/api/tasks` | Fetch tasks |
-| GET | `/api/categories` | Fetch categories |
+| Backend | `cd backend && npm run dev` | http://localhost:5000 |
+| Frontend | `cd frontend && npm run dev` | http://localhost:5173 |
 
-Additional authentication, task management, and category endpoints depend on the implemented backend routes.
+Once both services are running, open the frontend in your browser and register or log in.
 
-## 🌐 Deployment
+## API Overview
 
-The application can be deployed using:
+The backend exposes REST API routes under the `/api` prefix.
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| POST | `/api/auth/register` | User registration |
+| `/` | GET | Backend health check |
+| `/api/auth` | Authentication routes |
+| `/api/tasks` | Task management routes |
+| `/api/categories` | Category management routes |
+| `/api/admin` | Administrative routes |
+
+For detailed request bodies, parameters, and response formats, refer to the route and controller files in the `backend` directory.
+
+## Testing
+
+Backend tests use Jest and Supertest.
+
+From the backend directory:
+
+```bash
+npm test
+```
+
+## Production Deployment
+
+The application can be deployed using the following services:
 
 - **Frontend:** Vercel
 - **Backend:** Render
-- **Database:** Railway MySQL
+- **Database:** Firebase Cloud Firestore
 
-For deployment, configure the production environment variables and update the frontend API URL to point to your deployed backend.
+### Frontend – Vercel
 
-## 🧪 Running the Application
+1. Import the GitHub repository into Vercel.
+2. Set the Root Directory to `frontend`.
+3. Select the Vite framework preset.
+4. Use the build command:
 
-To run the complete application locally:
+   ```bash
+   npm run build
+   ```
 
-1. Start your MySQL database.
-2. Start the backend server.
-3. Start the frontend development server.
-4. Open the frontend URL in your browser.
-5. Register or log in and start managing your tasks.
+5. Set the output directory to:
 
-Make sure the backend and database are connected before using the application.
+   ```text
+   dist
+   ```
 
-## 🔐 Security
+6. Add the required frontend Firebase configuration and production backend API URL as environment variables.
+7. Deploy the application.
 
-- Keep credentials and environment variables private.
-- Never commit `.env` files or service account JSON files.
-- Use environment variables for sensitive configuration.
-- Do not share production database credentials publicly.
+### Backend – Render
 
-## 🤝 Contributing
+1. Create a new **Web Service** on Render.
+2. Connect the GitHub repository.
+3. Set the Root Directory to `backend`.
+4. Set the build command:
 
-Contributions are welcome!
+   ```bash
+   npm install
+   ```
 
-1. Fork this repository.
-2. Create a new branch:
+5. Set the start command:
 
-```bash
-git checkout -b feature/your-feature-name
-```
+   ```bash
+   npm start
+   ```
+
+6. Add the backend environment variables in Render:
+
+   ```env
+   NODE_ENV=production
+   FIREBASE_PROJECT_ID=your_firebase_project_id
+   FIREBASE_SERVICE_ACCOUNT=your_service_account_json
+   CORS_ORIGIN=https://your-frontend-domain.vercel.app
+   ```
+
+   Set `PORT` only if required by your hosting configuration; Render normally provides it automatically.
+
+7. Deploy the service and check its health endpoint.
+
+After deployment, update the frontend's backend API URL to the deployed Render service URL and redeploy the frontend.
+
+**Important:** Use your actual deployed domains and Firebase credentials. Never put service-account credentials in frontend environment variables.
+
+## Security Notes
+
+- Never commit `.env` files.
+- Never upload `serviceAccountKey.json`.
+- Never expose Firebase Admin SDK credentials in frontend code.
+- Configure Firestore security rules before production use.
+- Restrict CORS to trusted frontend domains in production.
+- Do not share database credentials or private keys publicly.
+
+## Contributing
+
+Contributions are welcome.
+
+1. Fork the repository.
+2. Create a feature branch:
+
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
 
 3. Make your changes.
 4. Commit your changes:
 
-```bash
-git add .
-git commit -m "Add: your feature description"
-```
+   ```bash
+   git add .
+   git commit -m "Add: describe your changes"
+   ```
 
 5. Push your branch:
 
-```bash
-git push origin feature/your-feature-name
-```
+   ```bash
+   git push origin feature/your-feature-name
+   ```
 
 6. Open a Pull Request.
 
-## 📄 License
+## License
 
-This project is available for educational and personal use. Add an appropriate open-source license if you intend to distribute it under specific permissions.
+This project currently does not specify an open-source license. Contact the repository owner before redistributing or using it under different licensing terms.
 
 ---
 
-**Built with ❤️ using Node.js, Express.js, MySQL, and modern frontend technologies.**
+**Built with React, TypeScript, Node.js, Express.js, and Firebase.**
+
+Repository: https://github.com/OmkarGhangale-dev/To-do-project-GRP7
