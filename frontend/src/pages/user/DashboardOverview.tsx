@@ -12,6 +12,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { StatCard } from '../../components/common/StatCard';
+import { AINextTaskPanel } from '../../components/ai/AINextTaskPanel';
 import { useAuth } from '../../context/AuthContext';
 import { useTask } from '../../context/TaskContext';
 import { Task, TaskStatus } from '../../types';
@@ -191,6 +192,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           subtext="Exceeded scheduled SLA"
         />
       </div>
+
+      {/* 2.5 Smart AI Recommendation: What Should I Do Next? */}
+      <AINextTaskPanel />
 
       {/* 3. Two-Column Charts Section (Spike Architecture) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

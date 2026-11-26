@@ -109,6 +109,11 @@ export const api = {
     priority?: string;
     status?: string;
     dueDate?: string | null;
+    dueTime?: string | null;
+    category?: string | null;
+    tags?: string[];
+    assignedTo?: string | null;
+    estimatedHours?: number | null;
   }) {
     return request<{ success: boolean; data: any }>('/tasks', {
       method: 'POST',
@@ -125,6 +130,11 @@ export const api = {
       priority?: string;
       status?: string;
       dueDate?: string | null;
+      dueTime?: string | null;
+      category?: string | null;
+      tags?: string[];
+      assignedTo?: string | null;
+      estimatedHours?: number | null;
     }
   ) {
     return request<{ success: boolean; data: any }>(`/tasks/${taskId}`, {
@@ -176,6 +186,94 @@ export const api = {
   async getAdminStats() {
     return request<{ success: boolean; data: any }>('/admin/stats', {
       method: 'GET',
+    });
+  },
+
+  // ── AI endpoints ──────────────────────────────────────────────────────────
+
+  /**
+   * Analyses an array of tasks and returns AI-suggested priorities and ordering.
+   * The API key is kept server-side; the frontend only sends task metadata.
+   */
+  async aiPrioritizeTasks(tasks: Array<{
+    id: string;
+    title: string;
+    description?: string;
+    dueDate?: string | null;
+    priority?: string;
+    status?: string;
+    category?: string;
+  }>) {
+    return request<{
+      success: boolean;
+      data: {
+        recommendations: Array<{
+          id: string;
+          suggestedPriority: 'High' | 'Medium' | 'Low';
+          suggestedOrder: number;
+          reason: string;
+        }>;
+        summary: string;
+      };
+    }>('/ai/prioritize', {
+      method: 'POST',
+      body: JSON.stringify({ tasks }),
+    });
+  },
+
+  /**
+   * Returns the single best next task to focus on.
+   */
+  async aiGetNextTask(tasks: Array<{
+    id: string;
+    title: string;
+    description?: string;
+    dueDate?: string | null;
+    priority?: string;
+    status?: string;
+    category?: string;
+  }>) {
+    return request<{
+      success: boolean;
+      data: {
+        recommendation: {
+          id: string;
+          title: string;
+          reason: string;
+          urgencyScore: number;
+        } | null;
+        message?: string;
+      };
+    }>('/ai/next-task', {
+      method: 'POST',
+      body: JSON.stringify({ tasks }),
+    });
+  },
+
+  /**
+   * Breaks a large task into 3–5 actionable subtasks.
+   */
+  async aiBreakdownTask(task: {
+    id?: string;
+    title: string;
+    description?: string;
+    dueDate?: string | null;
+    priority?: string;
+    status?: string;
+    category?: string;
+  }) {
+    return request<{
+      success: boolean;
+      data: {
+        subtasks: Array<{
+          title: string;
+          description: string;
+          estimatedHours: number;
+        }>;
+      };
+    }>('/ai/breakdown', {
+      method: 'POST',
+      body: JSON.stringify({ task }),
     });
   },
 };

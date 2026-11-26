@@ -58,7 +58,7 @@ interface TaskContextType {
   markAllNotificationsRead: () => void;
   clearNotifications: () => void;
 
-  // Computed metrics
+  // Real Computed Statistics (strictly derived from live tasks)
   stats: {
     total: number;
     completed: number;
@@ -70,6 +70,7 @@ interface TaskContextType {
   upcomingTasks: Task[];
   overdueTasks: Task[];
   filteredTasks: Task[];
+  isTaskOverdue: (task: { status: string; dueDate?: any; dueTime?: string | null }) => boolean;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -93,6 +94,93 @@ function formatDueDate(raw: any): string {
     return raw.toISOString().split('T')[0];
   }
   return '';
+}
+
+/**
+ * parseTaskDeadline — extracts a JavaScript Date and determines whether it's date-only
+ *
+ * Handles:
+ *  • Firebase Firestore Timestamp objects ({ _seconds, _nanoseconds } or { seconds } or .toDate())
+ *  • JavaScript Date instances
+ *  • Full ISO date/time strings ("2026-11-26T16:00:00Z" or "2026-11-26T16:00")
+ *  • Date-only strings ("YYYY-MM-DD")
+ *  • Optional dueTime ("HH:mm")
+ *  • Timezone-safe local parsing
+ */
+export function parseTaskDeadline(task: {
+  dueDate?: any;
+  dueTime?: string | null;
+}): { deadline: Date | null; isDateOnly: boolean } {
+  if (!task || !task.dueDate) return { deadline: null, isDateOnly: true };
+
+  const raw = task.dueDate;
+  let dateObj: Date | null = null;
+  let isDateOnly = false;
+
+  if (raw instanceof Date) {
+    dateObj = new Date(raw.getTime());
+  } else if (raw && typeof raw.toDate === 'function') {
+    dateObj = raw.toDate();
+  } else if (raw && typeof raw._seconds === 'number') {
+    dateObj = new Date(raw._seconds * 1000 + (raw._nanoseconds ? raw._nanoseconds / 1e6 : 0));
+  } else if (raw && typeof raw.seconds === 'number') {
+    dateObj = new Date(raw.seconds * 1000);
+  } else if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      isDateOnly = true;
+      const [year, month, day] = trimmed.split('-').map(Number);
+      dateObj = new Date(year, month - 1, day, 23, 59, 59, 999);
+    } else {
+      const parsed = new Date(trimmed);
+      if (!isNaN(parsed.getTime())) {
+        dateObj = parsed;
+      }
+    }
+  }
+
+  if (!dateObj || isNaN(dateObj.getTime())) {
+    return { deadline: null, isDateOnly: true };
+  }
+
+  // If a specific dueTime ("HH:mm") is provided, attach it in local time
+  if (task.dueTime && /^\d{2}:\d{2}/.test(task.dueTime.trim())) {
+    const [hours, minutes] = task.dueTime.trim().split(':').map(Number);
+    const y = dateObj.getFullYear();
+    const m = dateObj.getMonth();
+    const d = dateObj.getDate();
+    dateObj = new Date(y, m, d, hours, minutes, 0, 0);
+    isDateOnly = false;
+  }
+
+  return { deadline: dateObj, isDateOnly };
+}
+
+/**
+ * isTaskOverdue — robust overdue detection
+ *
+ * Fixes the bug where a task created at 5 PM with a deadline of 4 PM
+ * did not appear as overdue immediately.
+ *
+ * Rules:
+ *  • Completed tasks  → never overdue
+ *  • No valid deadline → never overdue
+ *  • Date-only deadline → overdue only after end-of-day (23:59:59.999 local)
+ *  • Time-specific deadline → overdue as soon as deadline < current time
+ */
+export function isTaskOverdue(task: {
+  status: string;
+  dueDate?: any;
+  dueTime?: string | null;
+}): boolean {
+  if (!task) return false;
+  if (task.status === 'Completed' || task.status === 'Done') return false;
+  if (!task.dueDate) return false;
+
+  const { deadline } = parseTaskDeadline(task);
+  if (!deadline || isNaN(deadline.getTime())) return false;
+
+  return deadline.getTime() < Date.now();
 }
 
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -161,7 +249,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
             priority,
             status,
             dueDate: dueDateStr,
-            dueTime: t.dueTime || '17:00',
+            dueTime: t.dueTime || (t.dueDate && typeof t.dueDate === 'string' && t.dueDate.includes('T') && !t.dueDate.includes('T00:00') && !t.dueDate.includes('T23:59') ? t.dueDate.split('T')[1].slice(0, 5) : (t.dueTime || '')),
             tags: Array.isArray(t.tags) ? t.tags : [],
             createdAt: t.createdAt ? new Date(t.createdAt._seconds ? t.createdAt._seconds * 1000 : t.createdAt).toISOString() : new Date().toISOString(),
             ownerId: t.userId || currentUser?.id || '',
@@ -210,6 +298,21 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshTasks();
   }, [refreshTasks]);
 
+  // ── Overdue recalculation: re-render every minute + on tab focus ──────────
+  // This ensures overdue status updates after the user leaves and returns.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const intervalId = setInterval(() => setTick((n) => n + 1), 60_000);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') setTick((n) => n + 1);
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
+
   // Log activity helper
   const addLog = useCallback(
     (action: string, target: string, type: 'task' | 'user' | 'auth' | 'system' = 'task') => {
@@ -232,12 +335,24 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     data: Omit<Task, 'id' | 'createdAt' | 'ownerId' | 'ownerName'>
   ): Promise<Task | null> => {
     try {
+      // Build a time-aware ISO string so overdue detection works immediately.
+      // If dueTime is provided (HH:mm), use it; otherwise default to end-of-day (23:59).
+      let dueDateISO: string | null = null;
+      if (data.dueDate) {
+        const time = data.dueTime && /^\d{2}:\d{2}$/.test(data.dueTime) ? data.dueTime : '23:59';
+        dueDateISO = `${data.dueDate}T${time}:00`;
+      }
       const payload = {
         title: data.title,
         description: data.description,
         priority: data.priority,
         status: data.status === 'To Do' ? 'Pending' : data.status,
-        dueDate: data.dueDate ? `${data.dueDate}T12:00:00Z` : null,
+        dueDate: dueDateISO,
+        dueTime: data.dueTime || null,
+        category: data.category,
+        tags: data.tags,
+        assignedTo: data.assignedTo,
+        estimatedHours: data.estimatedHours,
       };
 
       const res = await api.createTask(payload);
@@ -273,8 +388,21 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         payload.status = updates.status === 'To Do' ? 'Pending' : updates.status;
       }
       if (updates.dueDate !== undefined) {
-        payload.dueDate = updates.dueDate ? `${updates.dueDate}T12:00:00Z` : null;
+        let dueDateISO: string | null = null;
+        if (updates.dueDate) {
+          const time =
+            updates.dueTime && /^\d{2}:\d{2}$/.test(updates.dueTime)
+              ? updates.dueTime
+              : '23:59';
+          dueDateISO = `${updates.dueDate}T${time}:00`;
+        }
+        payload.dueDate = dueDateISO;
       }
+      if (updates.dueTime !== undefined) payload.dueTime = updates.dueTime || null;
+      if (updates.category !== undefined) payload.category = updates.category;
+      if (updates.tags !== undefined) payload.tags = updates.tags;
+      if (updates.assignedTo !== undefined) payload.assignedTo = updates.assignedTo;
+      if (updates.estimatedHours !== undefined) payload.estimatedHours = updates.estimatedHours;
 
       await api.updateTask(taskId, payload);
 
@@ -411,31 +539,35 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const unreadNotificationCount = notifications.filter((n) => !n.read).length;
 
   // Real Computed Statistics (strictly derived from live tasks)
+  // Uses isTaskOverdue() for consistent, time-aware overdue detection.
   const todayStr = new Date().toISOString().split('T')[0];
 
   const stats = useMemo(() => {
     const total = tasks.length;
     const completed = tasks.filter((t) => t.status === 'Completed').length;
     const pending = total - completed;
-    const overdue = tasks.filter(
-      (t) => t.status !== 'Completed' && t.dueDate && t.dueDate < todayStr
-    ).length;
+    const overdue = tasks.filter((t) => isTaskOverdue(t)).length;
     const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
     return { total, completed, pending, overdue, completionRate };
-  }, [tasks, todayStr]);
+  }, [tasks]);
 
   const todayTasks = useMemo(() => {
     return tasks.filter((t) => t.dueDate === todayStr);
   }, [tasks, todayStr]);
 
   const upcomingTasks = useMemo(() => {
-    return tasks.filter((t) => t.dueDate && t.dueDate > todayStr && t.status !== 'Completed');
-  }, [tasks, todayStr]);
+    const now = new Date();
+    return tasks.filter((t) => {
+      if (t.status === 'Completed' || !t.dueDate) return false;
+      const deadline = new Date(`${t.dueDate}T23:59:59`);
+      return deadline > now;
+    });
+  }, [tasks]);
 
   const overdueTasks = useMemo(() => {
-    return tasks.filter((t) => t.dueDate && t.dueDate < todayStr && t.status !== 'Completed');
-  }, [tasks, todayStr]);
+    return tasks.filter((t) => isTaskOverdue(t));
+  }, [tasks]);
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((t) => {
@@ -508,6 +640,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         upcomingTasks,
         overdueTasks,
         filteredTasks,
+        isTaskOverdue,
       }}
     >
       {children}

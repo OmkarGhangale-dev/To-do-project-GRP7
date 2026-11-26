@@ -29,6 +29,7 @@ import { CompletedTasksPage } from './pages/user/CompletedTasksPage';
 import { AnalyticsPage } from './pages/user/AnalyticsPage';
 import { NotificationsPage } from './pages/user/NotificationsPage';
 import { SettingsPage } from './pages/user/SettingsPage';
+import { AIAssistantPage } from './pages/user/AIAssistantPage';
 
 // Admin Pages
 import { AdminOverviewPage } from './pages/admin/AdminOverviewPage';
@@ -215,6 +216,8 @@ const MainAppContent: React.FC = () => {
         );
       case 'analytics':
         return <AnalyticsPage />;
+      case 'ai-assistant':
+        return <AIAssistantPage />;
       case 'notifications':
         return <NotificationsPage />;
       case 'settings':

@@ -14,6 +14,7 @@ import {
   Shield,
   ShieldCheck,
   X,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTask } from '../../context/TaskContext';
@@ -74,6 +75,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: 'ANALYTICS & ALERTS',
       items: [
         { id: 'analytics', label: 'Productivity Analytics', icon: BarChart3 },
+        { id: 'ai-assistant', label: 'AI Assistant', icon: Sparkles },
         {
           id: 'notifications',
           label: 'Notification Centre',

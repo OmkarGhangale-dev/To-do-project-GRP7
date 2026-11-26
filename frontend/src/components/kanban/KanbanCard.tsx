@@ -1,6 +1,7 @@
 import React from 'react';
 import { Calendar, Tag, MoreHorizontal, AlertTriangle, Eye, Edit3, Trash2 } from 'lucide-react';
 import { Task, TaskPriority, TaskCategory } from '../../types';
+import { isTaskOverdue } from '../../context/TaskContext';
 
 interface KanbanCardProps {
   task: Task;
@@ -19,8 +20,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
 }) => {
   const [showMenu, setShowMenu] = React.useState(false);
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const isOverdue = task.status !== 'Completed' && task.dueDate < todayStr;
+  const isOverdue = isTaskOverdue(task);
 
   const priorityConfig: Record<TaskPriority, { bg: string; text: string; dot: string }> = {
     Low: {

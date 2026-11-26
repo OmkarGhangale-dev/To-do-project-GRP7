@@ -44,6 +44,7 @@ export const TaskTable: React.FC<TaskTableProps> = ({
     setSelectedCategory,
     setSelectedPriority,
     setSelectedStatus,
+    isTaskOverdue,
   } = useTask();
 
   const [activeMenuTaskId, setActiveMenuTaskId] = useState<string | null>(null);
@@ -221,7 +222,7 @@ export const TaskTable: React.FC<TaskTableProps> = ({
               </tr>
             ) : (
               paginatedTasks.map((task) => {
-                const isOverdue = task.status !== 'Completed' && task.dueDate < todayStr;
+                const isOverdue = isTaskOverdue(task);
                 const isDone = task.status === 'Completed';
 
                 return (

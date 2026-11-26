@@ -30,12 +30,11 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   onEdit,
   onDelete,
 }) => {
-  const { toggleTaskComplete, duplicateTask, moveTaskStatus } = useTask();
+  const { toggleTaskComplete, duplicateTask, moveTaskStatus, isTaskOverdue } = useTask();
 
   if (!task) return null;
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const isOverdue = task.status !== 'Completed' && task.dueDate < todayStr;
+  const isOverdue = isTaskOverdue(task);
   const isCompleted = task.status === 'Completed';
 
   const priorityStyles: Record<TaskPriority, { bg: string; text: string; border: string }> = {

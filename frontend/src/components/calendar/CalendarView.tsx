@@ -18,7 +18,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onViewTask,
   onAddTaskWithDate,
 }) => {
-  const { tasks } = useTask();
+  const { tasks, isTaskOverdue } = useTask();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month');
 
@@ -156,7 +156,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
                 <div className="space-y-1 flex-1 overflow-y-auto max-h-[90px]">
                   {dayTasks.slice(0, 3).map((task) => {
-                    const isOverdue = task.status !== 'Completed' && task.dueDate < todayStr;
+                    const isOverdue = isTaskOverdue(task);
                     return (
                       <div
                         key={task.id}

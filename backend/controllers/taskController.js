@@ -21,7 +21,19 @@ const validateCategory = async (categoryId, userId) => {
 // CREATE TASK
 const createTask = async (req, res, next) => {
     try {
-        const { title, description, categoryId, priority, status, dueDate } = req.body;
+        const {
+            title,
+            description,
+            categoryId,
+            priority,
+            status,
+            dueDate,
+            dueTime,
+            category,
+            tags,
+            assignedTo,
+            estimatedHours
+        } = req.body;
 
         if (typeof title !== "string" || !title.trim()) {
             return res.status(400).json({
@@ -108,6 +120,11 @@ const createTask = async (req, res, next) => {
             priority: priority || "Medium",
             status: status || "Pending",
             dueDate: parsedDueDate,
+            dueTime: typeof dueTime === "string" ? dueTime.trim() : null,
+            category: typeof category === "string" ? category.trim() : null,
+            tags: Array.isArray(tags) ? tags : [],
+            assignedTo: typeof assignedTo === "string" ? assignedTo.trim() : null,
+            estimatedHours: typeof estimatedHours === "number" ? estimatedHours : null,
             createdAt: now,
             updatedAt: now
         };
@@ -166,7 +183,19 @@ const getTask = async (req, res, next) => {
 // UPDATE TASK
 const updateTask = async (req, res, next) => {
     try {
-        const { title, description, categoryId, priority, status, dueDate } = req.body;
+        const {
+            title,
+            description,
+            categoryId,
+            priority,
+            status,
+            dueDate,
+            dueTime,
+            category,
+            tags,
+            assignedTo,
+            estimatedHours
+        } = req.body;
 
         const updateData = {};
 
@@ -268,6 +297,26 @@ const updateTask = async (req, res, next) => {
 
                 updateData.dueDate = Timestamp.fromDate(date);
             }
+        }
+
+        if (dueTime !== undefined) {
+            updateData.dueTime = typeof dueTime === "string" ? dueTime.trim() : null;
+        }
+
+        if (category !== undefined) {
+            updateData.category = typeof category === "string" ? category.trim() : null;
+        }
+
+        if (tags !== undefined) {
+            updateData.tags = Array.isArray(tags) ? tags : [];
+        }
+
+        if (assignedTo !== undefined) {
+            updateData.assignedTo = typeof assignedTo === "string" ? assignedTo.trim() : null;
+        }
+
+        if (estimatedHours !== undefined) {
+            updateData.estimatedHours = typeof estimatedHours === "number" ? estimatedHours : null;
         }
 
         if (Object.keys(updateData).length === 0) {

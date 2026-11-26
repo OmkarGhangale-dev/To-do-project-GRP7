@@ -9,6 +9,7 @@ const taskRoutes = require("./routes/taskRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const aiRoutes = require("./routes/aiRoutes");
 const errorHandler = require("./middlewares/errorHandler");
 
 const app = express();
@@ -47,6 +48,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/ai", aiRoutes);
 
 // 404 route
 app.use((req, res) => {
@@ -62,6 +64,10 @@ app.use(errorHandler);
 // Server
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-    console.log(`TaskFlow server running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== "test") {
+    app.listen(PORT, () => {
+        console.log(`TaskFlow server running on port ${PORT}`);
+    });
+}
+
+module.exports = app;
