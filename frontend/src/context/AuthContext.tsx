@@ -18,7 +18,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('taskflow_auth_user');
+    // Clear legacy localStorage auto-login so opening link always starts on Login Page
+    try {
+      localStorage.removeItem('taskflow_auth_user');
+      localStorage.removeItem('taskflow_active_role');
+    } catch {
+      // ignore
+    }
+    const saved = sessionStorage.getItem('taskflow_session_user');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -26,13 +33,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error(e);
       }
     }
-    // Default to the standard workspace member (Sarah Chen, User Mode) for authentic user experience
-    return INITIAL_USERS[1];
+    // Default to null: users must see the Login Page first
+    return null;
   });
 
   const [activeRole, setActiveRoleState] = useState<UserRole>(() => {
     if (currentUser?.role !== 'admin') return 'user';
-    const savedRole = localStorage.getItem('taskflow_active_role');
+    const savedRole = sessionStorage.getItem('taskflow_active_role');
     if (savedRole === 'admin' || savedRole === 'user') return savedRole;
     return 'admin';
   });
@@ -41,11 +48,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (currentUser) {
-      localStorage.setItem('taskflow_auth_user', JSON.stringify(currentUser));
+      sessionStorage.setItem('taskflow_session_user', JSON.stringify(currentUser));
       if (currentUser.role !== 'admin' && activeRole !== 'user') {
         setActiveRoleState('user');
       }
     } else {
+      sessionStorage.removeItem('taskflow_session_user');
+      sessionStorage.removeItem('taskflow_active_role');
       localStorage.removeItem('taskflow_auth_user');
       localStorage.removeItem('taskflow_active_role');
     }
@@ -53,9 +62,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (currentUser?.role === 'admin') {
-      localStorage.setItem('taskflow_active_role', activeRole);
+      sessionStorage.setItem('taskflow_active_role', activeRole);
     } else {
-      localStorage.setItem('taskflow_active_role', 'user');
+      sessionStorage.setItem('taskflow_active_role', 'user');
     }
   }, [activeRole, currentUser]);
 
@@ -119,7 +128,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     setCurrentUser(null);
+    sessionStorage.removeItem('taskflow_session_user');
+    sessionStorage.removeItem('taskflow_active_role');
     localStorage.removeItem('taskflow_auth_user');
+    localStorage.removeItem('taskflow_active_role');
   };
 
   const setActiveRole = (role: UserRole) => {
