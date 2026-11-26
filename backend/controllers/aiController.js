@@ -77,35 +77,68 @@ function buildTaskSummary(task, now = new Date()) {
 
 /**
  * Call Groq with a JSON-output system prompt, then parse and validate the response.
+ * Automatically falls back to supported models if the requested model returns 404/model_not_found.
  * Returns the parsed object, or throws on failure.
  */
 async function callGroqJSON(systemPrompt, userPrompt, timeoutMs = 20_000) {
     const groq = getGroqClient();
 
-    // Simple timeout wrapper
-    const responseP = groq.chat.completions.create({
-        model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
-        messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-        ],
-        temperature: 0.3,
-        max_tokens: 1024,
-        response_format: { type: "json_object" },
-    });
+    const candidateModels = [
+        process.env.GROQ_MODEL,
+        "qwen/qwen3.8-27b",
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant"
+    ].filter(Boolean);
 
-    const timeoutP = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Groq API timeout")), timeoutMs)
-    );
+    // Deduplicate models preserving order
+    const modelsToTry = [...new Set(candidateModels)];
+    let lastError = null;
 
-    const response = await Promise.race([responseP, timeoutP]);
-    const raw = response.choices?.[0]?.message?.content || "";
+    for (const model of modelsToTry) {
+        try {
+            const responseP = groq.chat.completions.create({
+                model,
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: userPrompt },
+                ],
+                temperature: 0.3,
+                max_tokens: 1024,
+                response_format: { type: "json_object" },
+            });
 
-    try {
-        return JSON.parse(raw);
-    } catch {
-        throw new Error(`Groq returned non-JSON content: ${raw.slice(0, 200)}`);
+            const timeoutP = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Groq API timeout")), timeoutMs)
+            );
+
+            const response = await Promise.race([responseP, timeoutP]);
+            const raw = response.choices?.[0]?.message?.content || "";
+
+            try {
+                return JSON.parse(raw);
+            } catch {
+                throw new Error(`Groq returned non-JSON content: ${raw.slice(0, 200)}`);
+            }
+        } catch (err) {
+            lastError = err;
+            const isModelNotFound =
+                err.status === 404 ||
+                err.code === "model_not_found" ||
+                err.code === "model_decommissioned" ||
+                (err.message && err.message.includes("does not exist"));
+
+            // If the model does not exist or has been decommissioned, try next candidate
+            if (isModelNotFound) {
+                console.warn(`Groq model '${model}' not available, attempting fallback...`);
+                continue;
+            }
+
+            // For other errors (rate limit, auth failure, timeout), throw immediately
+            throw err;
+        }
     }
+
+    throw lastError || new Error("All Groq model attempts failed.");
 }
 
 // ─── Input validators ─────────────────────────────────────────────────────────
