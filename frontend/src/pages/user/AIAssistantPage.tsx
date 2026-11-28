@@ -1,10 +1,9 @@
 /**
  * AIAssistantPage.tsx
  *
- * Dedicated page for all three AI features:
- *  1. AI Priority Analysis — priority recommendations for all pending tasks
- *  2. What Should I Do Next? — single best-next-task recommendation
- *  3. AI Task Breakdown — split a large task into subtasks
+ * Dedicated page for Dual-Engine AI Comparison (Google Gemini vs Groq):
+ *  1. What Should I Do Next? — side-by-side single best-next-task recommendation
+ *  2. AI Priority Analysis — side-by-side priority recommendations & ordering
  *
  * Visual style: standard Spike dashboard page layout.
  * No redesign, no AI-generated template aesthetics.
@@ -14,7 +13,6 @@ import React from 'react';
 import { Sparkles } from 'lucide-react';
 import { AIPrioritizePanel } from '../../components/ai/AIPrioritizePanel';
 import { AINextTaskPanel } from '../../components/ai/AINextTaskPanel';
-import { AIBreakdownPanel } from '../../components/ai/AIBreakdownPanel';
 
 export const AIAssistantPage: React.FC = () => {
   return (
@@ -27,31 +25,26 @@ export const AIAssistantPage: React.FC = () => {
             AI Assistant
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Groq-powered insights to help you work smarter — all analysis runs server-side.
+            Dual-engine AI insights (Google Gemini &amp; Groq) — compare speed, accuracy, and clarity side by side.
           </p>
         </div>
 
         <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs text-slate-500 dark:text-slate-400">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          Powered by Groq LLM API
+          Gemini &amp; Groq Dual Engine
         </div>
       </div>
 
-      {/* How it works — minimal inline notice, not a banner */}
+      {/* How it works — minimal inline notice */}
       <p className="text-xs text-slate-400 border-l-2 border-slate-200 dark:border-slate-700 pl-3 leading-relaxed">
         Your task titles, descriptions, deadlines and priorities are sent to the backend for
-        analysis. The Groq API key is stored securely in the server environment and is never
-        exposed to the browser. AI suggestions require your approval before modifying any task.
+        simultaneous analysis by Google Gemini and Groq. API keys stay securely on the server, and
+        recommendations require your approval before modifying any task.
       </p>
 
-      {/* Two-column on large screens, stacked on mobile */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AINextTaskPanel />
-        <AIPrioritizePanel />
-      </div>
-
-      {/* Full width breakdown */}
-      <AIBreakdownPanel />
+      {/* Full-width side-by-side comparison panels */}
+      <AINextTaskPanel />
+      <AIPrioritizePanel />
     </div>
   );
 };

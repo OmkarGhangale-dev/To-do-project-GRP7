@@ -253,27 +253,125 @@ export const api = {
   /**
    * Breaks a large task into 3–5 actionable subtasks.
    */
-  async aiBreakdownTask(task: {
-    id?: string;
-    title: string;
-    description?: string;
-    dueDate?: string | null;
-    priority?: string;
-    status?: string;
-    category?: string;
-  }) {
+  /**
+   * Side-by-side Priority Analysis (Google Gemini vs Groq).
+   */
+  async aiComparePrioritizeTasks(
+    tasks: Array<{
+      id: string;
+      title: string;
+      description?: string;
+      dueDate?: string | null;
+      priority?: string;
+      status?: string;
+      category?: string;
+    }>
+  ) {
     return request<{
       success: boolean;
       data: {
-        subtasks: Array<{
-          title: string;
-          description: string;
-          estimatedHours: number;
-        }>;
+        empty: boolean;
+        message?: string;
+        gemini: {
+          status: 'success' | 'error';
+          model: string;
+          responseTimeMs: number | null;
+          recommendations: Array<{
+            id: string;
+            suggestedPriority: 'High' | 'Medium' | 'Low';
+            suggestedOrder: number;
+            reason: string;
+          }>;
+          summary: string;
+          metrics: {
+            speedMs: number;
+            accuracy: number;
+            clarity: number;
+          } | null;
+          error: string | null;
+        } | null;
+        groq: {
+          status: 'success' | 'error';
+          model: string;
+          responseTimeMs: number | null;
+          recommendations: Array<{
+            id: string;
+            suggestedPriority: 'High' | 'Medium' | 'Low';
+            suggestedOrder: number;
+            reason: string;
+          }>;
+          summary: string;
+          metrics: {
+            speedMs: number;
+            accuracy: number;
+            clarity: number;
+          } | null;
+          error: string | null;
+        } | null;
       };
-    }>('/ai/breakdown', {
+    }>('/ai/compare-prioritize', {
       method: 'POST',
-      body: JSON.stringify({ task }),
+      body: JSON.stringify({ tasks }),
+    });
+  },
+
+  /**
+   * Side-by-side "What Should I Do Next?" (Google Gemini vs Groq).
+   */
+  async aiCompareNextTask(
+    tasks: Array<{
+      id: string;
+      title: string;
+      description?: string;
+      dueDate?: string | null;
+      priority?: string;
+      status?: string;
+      category?: string;
+    }>
+  ) {
+    return request<{
+      success: boolean;
+      data: {
+        empty: boolean;
+        message?: string;
+        gemini: {
+          status: 'success' | 'error';
+          model: string;
+          responseTimeMs: number | null;
+          recommendation: {
+            id: string;
+            title: string;
+            reason: string;
+            urgencyScore: number;
+          } | null;
+          metrics: {
+            speedMs: number;
+            accuracy: number;
+            clarity: number;
+          } | null;
+          error: string | null;
+        } | null;
+        groq: {
+          status: 'success' | 'error';
+          model: string;
+          responseTimeMs: number | null;
+          recommendation: {
+            id: string;
+            title: string;
+            reason: string;
+            urgencyScore: number;
+          } | null;
+          metrics: {
+            speedMs: number;
+            accuracy: number;
+            clarity: number;
+          } | null;
+          error: string | null;
+        } | null;
+      };
+    }>('/ai/compare-next-task', {
+      method: 'POST',
+      body: JSON.stringify({ tasks }),
     });
   },
 };

@@ -259,6 +259,58 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           };
         });
         setTasks(mappedTasks);
+
+        // Website-entry notification alerts for overdue or high priority tasks (once per session)
+        const entryAlertFired = sessionStorage.getItem('taskflow_entry_alert_fired');
+        if (!entryAlertFired && mappedTasks.length > 0) {
+          sessionStorage.setItem('taskflow_entry_alert_fired', 'true');
+
+          const overdue = mappedTasks.filter((t) => isTaskOverdue(t));
+          const highPriority = mappedTasks.filter(
+            (t) => t.status !== 'Completed' && (t.priority === 'High' || t.priority === 'Urgent')
+          );
+
+          const entryNotifications: NotificationItem[] = [];
+
+          if (overdue.length > 0) {
+            showToast(
+              'Overdue Tasks Alert',
+              `You have ${overdue.length} overdue task${overdue.length > 1 ? 's' : ''} requiring immediate attention.`,
+              'warning'
+            );
+            entryNotifications.push({
+              id: `entry-overdue-${Date.now()}`,
+              title: 'Overdue Tasks Alert',
+              message: `You have ${overdue.length} overdue task${overdue.length > 1 ? 's' : ''} past their deadline.`,
+              type: 'overdue',
+              timestamp: new Date().toISOString(),
+              read: false,
+            });
+          }
+
+          if (highPriority.length > 0) {
+            setTimeout(() => {
+              showToast(
+                'High Priority Notice',
+                `You have ${highPriority.length} high priority or urgent task${highPriority.length > 1 ? 's' : ''} pending.`,
+                'info'
+              );
+            }, overdue.length > 0 ? 1200 : 0);
+
+            entryNotifications.push({
+              id: `entry-prio-${Date.now() + 1}`,
+              title: 'High Priority Tasks Pending',
+              message: `You have ${highPriority.length} high priority / urgent task${highPriority.length > 1 ? 's' : ''} awaiting action.`,
+              type: 'deadline',
+              timestamp: new Date().toISOString(),
+              read: false,
+            });
+          }
+
+          if (entryNotifications.length > 0) {
+            setNotifications((prev) => [...entryNotifications, ...prev]);
+          }
+        }
       }
 
       // If user has admin rights, load all registered workspace users

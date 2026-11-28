@@ -67,9 +67,20 @@ jest.mock("groq-sdk", () => {
     }));
 });
 
+// ── Mock @google/generative-ai so we never need a real Gemini API key ────────
+const mockGeminiGenerateContent = jest.fn();
+jest.mock("@google/generative-ai", () => ({
+    GoogleGenerativeAI: jest.fn().mockImplementation(() => ({
+        getGenerativeModel: jest.fn(() => ({
+            generateContent: mockGeminiGenerateContent,
+        })),
+    })),
+}));
+
 // ── Load server AFTER all mocks are set ─────────────────────────────────────
 process.env.NODE_ENV = "test";
 process.env.GROQ_API_KEY = "test-groq-key";
+process.env.GEMINI_API_KEY = "test-gemini-key";
 require("dotenv").config();
 
 const request = require("supertest");
@@ -295,90 +306,121 @@ describe("AI Next Task — POST /api/ai/next-task", () => {
     });
 });
 
-// ── POST /api/ai/breakdown ────────────────────────────────────────────────────
+// ── POST /api/ai/compare-next-task ────────────────────────────────────────────
 
-describe("AI Task Breakdown — POST /api/ai/breakdown", () => {
+describe("AI Compare Next Task — POST /api/ai/compare-next-task", () => {
     beforeEach(() => jest.clearAllMocks());
 
-    test("missing auth → 401", async () => {
+    const nextTaskPayload = {
+        id: "task-1",
+        title: "Fix critical production bug",
+        reason: "This task is overdue and has High priority affecting 20% of users.",
+        urgencyScore: 10,
+    };
+
+    test("missing auth token → 401", async () => {
         const res = await request(app)
-            .post("/api/ai/breakdown")
-            .send({ task: sampleTasks[0] });
+            .post("/api/ai/compare-next-task")
+            .send({ tasks: sampleTasks });
         expect(res.status).toBe(401);
     });
 
-    test("no task body → 400", async () => {
-        const res = await request(app)
-            .post("/api/ai/breakdown")
-            .set("Authorization", AUTH_HEADER)
-            .send({});
-        expect(res.status).toBe(400);
-    });
-
-    test("task with empty title → 400", async () => {
-        const res = await request(app)
-            .post("/api/ai/breakdown")
-            .set("Authorization", AUTH_HEADER)
-            .send({ task: { id: "t1", title: "  " } });
-        expect(res.status).toBe(400);
-    });
-
-    test("valid task → 200 with 3–5 subtasks", async () => {
+    test("both Gemini and Groq succeed → 200 with speed, accuracy, and clarity", async () => {
+        mockGeminiGenerateContent.mockResolvedValueOnce({
+            response: { text: () => JSON.stringify(nextTaskPayload) },
+        });
         mockGroqCreate.mockResolvedValueOnce({
-            choices: [
-                {
-                    message: {
-                        content: JSON.stringify({
-                            subtasks: [
-                                { title: "Reproduce the bug locally", description: "Set up test account and reproduce the crash.", estimatedHours: 0.5 },
-                                { title: "Identify root cause in auth flow", description: "Trace the error in the authentication middleware.", estimatedHours: 1 },
-                                { title: "Implement fix", description: "Apply the targeted fix and add a regression test.", estimatedHours: 2 },
-                                { title: "Deploy to staging", description: "Build and deploy to staging environment.", estimatedHours: 0.5 },
-                                { title: "Verify fix in production", description: "Monitor error rates after production deploy.", estimatedHours: 0.25 },
-                            ],
-                        }),
-                    },
-                },
-            ],
+            choices: [{ message: { content: JSON.stringify(nextTaskPayload) } }],
         });
 
         const res = await request(app)
-            .post("/api/ai/breakdown")
+            .post("/api/ai/compare-next-task")
             .set("Authorization", AUTH_HEADER)
-            .send({ task: sampleTasks[0] });
+            .send({ tasks: sampleTasks });
 
         expect(res.status).toBe(200);
         expect(res.body.success).toBe(true);
-        const { subtasks } = res.body.data;
-        expect(subtasks.length).toBeGreaterThanOrEqual(3);
-        expect(subtasks.length).toBeLessThanOrEqual(5);
-        expect(subtasks[0].title).toBeTruthy();
-        expect(typeof subtasks[0].estimatedHours).toBe("number");
+        const { gemini, groq } = res.body.data;
+
+        expect(gemini.status).toBe("success");
+        expect(gemini.recommendation.id).toBe("task-1");
+        expect(typeof gemini.metrics.speedMs).toBe("number");
+        expect(gemini.metrics.accuracy).toBeGreaterThan(0);
+        expect(gemini.metrics.clarity).toBeGreaterThan(0);
+
+        expect(groq.status).toBe("success");
+        expect(groq.recommendation.id).toBe("task-1");
+        expect(typeof groq.metrics.speedMs).toBe("number");
+        expect(groq.metrics.accuracy).toBeGreaterThan(0);
+        expect(groq.metrics.clarity).toBeGreaterThan(0);
     });
 
-    test("Groq rate limit → 503", async () => {
-        const err = new Error("rate limit");
-        err.status = 429;
-        mockGroqCreate.mockRejectedValueOnce(err);
-
-        const res = await request(app)
-            .post("/api/ai/breakdown")
-            .set("Authorization", AUTH_HEADER)
-            .send({ task: sampleTasks[0] });
-
-        expect(res.status).toBe(503);
-    });
-
-    test("Groq returns no subtasks → 502", async () => {
+    test("independent error handling: Gemini fails while Groq succeeds → 200", async () => {
+        mockGeminiGenerateContent.mockRejectedValueOnce(new Error("Gemini unavailable"));
         mockGroqCreate.mockResolvedValueOnce({
-            choices: [{ message: { content: JSON.stringify({ subtasks: [] }) } }],
+            choices: [{ message: { content: JSON.stringify(nextTaskPayload) } }],
         });
 
         const res = await request(app)
-            .post("/api/ai/breakdown")
+            .post("/api/ai/compare-next-task")
             .set("Authorization", AUTH_HEADER)
-            .send({ task: sampleTasks[0] });
+            .send({ tasks: sampleTasks });
 
-        expect(res.status).toBe(502);
+        expect(res.status).toBe(200);
+        const { gemini, groq } = res.body.data;
+        expect(gemini.status).toBe("error");
+        expect(gemini.error).toContain("Gemini unavailable");
+        expect(groq.status).toBe("success");
+        expect(groq.recommendation.id).toBe("task-1");
+    });
+});
+
+// ── POST /api/ai/compare-prioritize ───────────────────────────────────────────
+
+describe("AI Compare Prioritize — POST /api/ai/compare-prioritize", () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    const prioritizePayload = {
+        recommendations: [
+            { id: "task-1", suggestedPriority: "High", suggestedOrder: 1, reason: "Overdue production crash needs immediate attention." },
+            { id: "task-2", suggestedPriority: "Medium", suggestedOrder: 2, reason: "Due in 3 days for team review." },
+            { id: "task-3", suggestedPriority: "Low", suggestedOrder: 3, reason: "Exploratory research with no deadline." },
+        ],
+        summary: "Focus on the overdue production bug first before scheduled reporting and research.",
+    };
+
+    test("missing auth token → 401", async () => {
+        const res = await request(app)
+            .post("/api/ai/compare-prioritize")
+            .send({ tasks: sampleTasks });
+        expect(res.status).toBe(401);
+    });
+
+    test("both Gemini and Groq succeed → 200 with speed, accuracy, and clarity", async () => {
+        mockGeminiGenerateContent.mockResolvedValueOnce({
+            response: { text: () => JSON.stringify(prioritizePayload) },
+        });
+        mockGroqCreate.mockResolvedValueOnce({
+            choices: [{ message: { content: JSON.stringify(prioritizePayload) } }],
+        });
+
+        const res = await request(app)
+            .post("/api/ai/compare-prioritize")
+            .set("Authorization", AUTH_HEADER)
+            .send({ tasks: sampleTasks });
+
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        const { gemini, groq } = res.body.data;
+
+        expect(gemini.status).toBe("success");
+        expect(gemini.recommendations).toHaveLength(3);
+        expect(gemini.metrics.accuracy).toBeGreaterThan(0);
+        expect(gemini.metrics.clarity).toBeGreaterThan(0);
+
+        expect(groq.status).toBe("success");
+        expect(groq.recommendations).toHaveLength(3);
+        expect(groq.metrics.accuracy).toBeGreaterThan(0);
+        expect(groq.metrics.clarity).toBeGreaterThan(0);
     });
 });

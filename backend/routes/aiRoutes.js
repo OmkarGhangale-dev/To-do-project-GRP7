@@ -1,7 +1,12 @@
 const express = require("express");
 const router = express.Router();
 
-const { prioritizeTasks, getNextTask, breakdownTask } = require("../controllers/aiController");
+const {
+    prioritizeTasks,
+    getNextTask,
+    comparePrioritize,
+    compareNextTask,
+} = require("../controllers/aiController");
 const { authenticateUser } = require("../middlewares/authMiddleware");
 
 // All AI routes require authentication — user-specific task data only
@@ -20,9 +25,15 @@ router.post("/prioritize", prioritizeTasks);
 router.post("/next-task", getNextTask);
 
 /**
- * POST /api/ai/breakdown
- * Breaks a large task into 3–5 actionable subtasks.
+ * POST /api/ai/compare-prioritize
+ * Runs identical priority analysis prompts against Google Gemini and Groq side-by-side.
  */
-router.post("/breakdown", breakdownTask);
+router.post("/compare-prioritize", comparePrioritize);
+
+/**
+ * POST /api/ai/compare-next-task
+ * Runs identical next-task recommendation prompts against Google Gemini and Groq side-by-side.
+ */
+router.post("/compare-next-task", compareNextTask);
 
 module.exports = router;
